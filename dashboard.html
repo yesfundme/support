@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — FUNDme</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .modal-backdrop { position:fixed; inset:0; background:rgba(22,36,28,0.5); display:none; align-items:center; justify-content:center; z-index:50; padding:16px; }
+  .modal-backdrop.open { display:flex; }
+  .modal { background:var(--surface); border-radius:var(--radius-card); padding:24px; max-width:420px; width:100%; }
+  .method-toggle { display:flex; gap:10px; margin-bottom:16px; }
+  .method-toggle button { flex:1; padding:12px; border-radius:12px; border:1.5px solid var(--line); background:var(--surface); cursor:pointer; font-weight:600; }
+  .method-toggle button.active { border-color:var(--green); color:var(--green); background:#EAF4EE; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">FUNDme</div>
+  <div class="nav-links">
+    <a href="dashboard.html" class="active">Dashboard</a>
+    <a href="#" onclick="logout()">Logout</a>
+  </div>
+</nav>
+
+<div class="container" id="app" style="padding:32px 20px 60px;">
+  <p>Loading your dashboard…</p>
+</div>
+
+<div class="modal-backdrop" id="withdrawModal">
+  <div class="modal">
+    <h3 style="margin-bottom:6px;">Withdraw funds</h3>
+    <p style="margin-bottom:16px;">Available balance: <strong id="modalBalance">KSh 0</strong></p>
+
+    <div class="method-toggle">
+      <button id="btnBank" class="active" onclick="setMethod('bank')">Bank</button>
+      <button id="btnMpesa" onclick="setMethod('mpesa')">M-Pesa</button>
+    </div>
+
+    <div id="bankFields">
+      <div class="form-field"><label>Bank Name</label><input type="text" id="bank_name"></div>
+      <div class="form-field"><label>Account Name</label><input type="text" id="account_name"></div>
+      <div class="form-field"><label>Account Number</label><input type="text" id="account_number"></div>
+    </div>
+    <div id="mpesaFields" style="display:none;">
+      <div class="form-field"><label>M-Pesa Name</label><input type="text" id="mpesa_name"></div>
+      <div class="form-field"><label>M-Pesa Phone Number</label><input type="tel" id="mpesa_phone"></div>
+    </div>
+
+    <div class="form-field"><label>Amount to Withdraw (KSh)</label><input type="number" id="withdrawAmount" min="1"></div>
+
+    <div class="error-banner" id="withdrawError"></div>
+    <button class="btn btn-primary btn-block" onclick="submitWithdrawal()">Request Withdrawal</button>
+    <button class="btn btn-secondary btn-block" style="margin-top:10px;" onclick="closeWithdrawModal()">Cancel</button>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+requireLogin();
+let currentCampaign = null;
+let method = 'bank';
+
+async function load() {
+  try {
+    const { campaigns } = await apiRequest('/campaigns/mine', { auth: true });
+    if (!campaigns.length) {
+      document.getElementById('app').innerHTML = `
+        <div class="card" style="max-width:480px;margin:60px auto;text-align:center;">
+          <h2 style="margin-bottom:10px;">No campaign yet</h2>
+          <p style="margin-bottom:20px;">Start your first FUNDme campaign to receive support.</p>
+          <a class="btn btn-primary" href="index.html#categories">Start a Campaign</a>
+        </div>`;
+      return;
+    }
+    currentCampaign = campaigns[0];
+
+    const [{ available_balance, total_collected }, { withdrawals }] = await Promise.all([
+      apiRequest(`/withdrawals/balance/${currentCampaign.id}`, { auth: true }),
+      apiRequest('/withdrawals/mine', { auth: true })
+    ]);
+
+    renderDashboard(currentCampaign, available_balance, total_collected, withdrawals);
+  } catch (err) {
+    document.getElementById('app').innerHTML = `<p>Could not load dashboard: ${err.message}</p>`;
+  }
+}
+
+function renderDashboard(c, availableBalance, totalCollected, withdrawals) {
+  const url = `${location.origin}${location.pathname.replace('dashboard.html','')}campaign.html?slug=${c.public_slug}`;
+
+  document.getElementById('app').innerHTML = `
+    <h1 style="font-size:26px;">${c.title}</h1>
+    <p style="margin-top:6px;text-transform:capitalize;">Status: <strong style="color:var(--green);">${c.status}</strong></p>
+
+    <div class="stat-grid">
+      <div class="card stat-card"><div class="label">Total Collected</div><div class="value">${formatKsh(totalCollected)}</div></div>
+      <div class="card stat-card"><div class="label">Available Balance</div><div class="value">${formatKsh(availableBalance)}</div></div>
+      <div class="card stat-card"><div class="label">Total Supporters</div><div class="value" id="supportersValue">—</div></div>
+      <div class="card stat-card"><div class="label">Campaign Status</div><div class="value" style="text-transform:capitalize;">${c.status}</div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="openWithdrawModal()">Withdraw</button>
+        <a class="btn btn-secondary" href="${url}" target="_blank">View Campaign</a>
+        <button class="btn btn-secondary" onclick="copyDashLink('${url}')">Copy Campaign Link</button>
+        <a class="btn btn-secondary" target="_blank" href="https://wa.me/?text=${encodeURIComponent('Support my campaign: ' + url)}">Share on WhatsApp</a>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <h3 style="margin-bottom:14px;">Recent Withdrawals</h3>
+      <table class="data-table">
+        <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead>
+        <tbody>
+          ${withdrawals.length ? withdrawals.map((w) => `
+            <tr>
+              <td data-label="Date">${new Date(w.requested_at).toLocaleDateString()}</td>
+              <td data-label="Amount">${formatKsh(w.amount)}</td>
+              <td data-label="Method" style="text-transform:capitalize;">${w.method}</td>
+              <td data-label="Status"><span class="badge ${w.status === 'paid' ? 'badge-success' : w.status === 'failed' ? 'badge-failed' : 'badge-pending'}">${w.status}</span></td>
+            </tr>`).join('') : '<tr><td colspan="4">No withdrawals yet.</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:14px;">Transactions</h3>
+      <div id="transactionsBox"><p>Loading…</p></div>
+    </div>
+  `;
+
+  loadTransactions(c.public_slug);
+}
+
+async function loadTransactions(slug) {
+  try {
+    const data = await apiRequest(`/campaigns/${slug}`);
+    document.getElementById('supportersValue').textContent = data.supporters_count;
+  } catch (e) {}
+  document.getElementById('transactionsBox').innerHTML =
+    `<p>Individual transaction line items appear here as supporters pay. Use the admin dashboard for the full ledger view.</p>`;
+}
+
+function copyDashLink(url) { navigator.clipboard.writeText(url); alert('Link copied!'); }
+
+function openWithdrawModal() {
+  document.getElementById('modalBalance').textContent = document.querySelector('.stat-card .value').parentElement === null ? '' : '';
+  apiRequest(`/withdrawals/balance/${currentCampaign.id}`, { auth: true }).then((d) => {
+    document.getElementById('modalBalance').textContent = formatKsh(d.available_balance);
+  });
+  document.getElementById('withdrawModal').classList.add('open');
+}
+function closeWithdrawModal() { document.getElementById('withdrawModal').classList.remove('open'); }
+
+function setMethod(m) {
+  method = m;
+  document.getElementById('btnBank').classList.toggle('active', m === 'bank');
+  document.getElementById('btnMpesa').classList.toggle('active', m === 'mpesa');
+  document.getElementById('bankFields').style.display = m === 'bank' ? 'block' : 'none';
+  document.getElementById('mpesaFields').style.display = m === 'mpesa' ? 'block' : 'none';
+}
+
+async function submitWithdrawal() {
+  const errorEl = document.getElementById('withdrawError');
+  errorEl.style.display = 'none';
+  try {
+    await apiRequest('/withdrawals', {
+      method: 'POST',
+      auth: true,
+      body: {
+        campaign_id: currentCampaign.id,
+        amount: document.getElementById('withdrawAmount').value,
+        method,
+        bank_name: document.getElementById('bank_name').value,
+        account_name: document.getElementById('account_name').value,
+        account_number: document.getElementById('account_number').value,
+        mpesa_name: document.getElementById('mpesa_name').value,
+        mpesa_phone: document.getElementById('mpesa_phone').value
+      }
+    });
+    closeWithdrawModal();
+    load();
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.style.display = 'block';
+  }
+}
+
+load();
+</script>
+</body>
+</html>

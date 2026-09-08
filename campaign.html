@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FUNDme Campaign</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .campaign-hero-img { width:100%; height:260px; object-fit:cover; border-radius:var(--radius-card); background:#EDEFE8; }
+  .modal-backdrop { position:fixed; inset:0; background:rgba(22,36,28,0.5); display:none; align-items:center; justify-content:center; z-index:50; padding:16px; }
+  .modal-backdrop.open { display:flex; }
+  .modal { background:var(--surface); border-radius:var(--radius-card); padding:24px; max-width:420px; width:100%; max-height:90vh; overflow-y:auto; }
+  .share-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+  .share-btn { padding:10px 16px; border-radius:var(--radius-pill); border:1.5px solid var(--line); font-size:14px; cursor:pointer; background:var(--surface); }
+  .checkbox-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:14px; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">FUNDme</div>
+  <div class="nav-links"><a href="index.html">Home</a><a href="search.html">Campaigns</a></div>
+</nav>
+
+<div class="container" id="app" style="padding:32px 20px 60px;">
+  <p>Loading campaign…</p>
+</div>
+
+<div class="modal-backdrop" id="checkoutModal">
+  <div class="modal">
+    <h3 style="margin-bottom:16px;">Your Support</h3>
+    <div id="checkoutSummary"></div>
+    <div class="checkout-total">
+      <span>Total</span>
+      <strong id="checkoutTotal">KSh 0</strong>
+    </div>
+
+    <div class="form-field" style="margin-top:14px;">
+      <label>Your Name (optional)</label>
+      <input type="text" id="supporterName" placeholder="e.g. Mary W.">
+    </div>
+    <div class="checkbox-row"><input type="checkbox" id="showNamePublicly" checked> <label for="showNamePublicly">Show my name publicly</label></div>
+    <div class="checkbox-row"><input type="checkbox" id="isAnonymous"> <label for="isAnonymous">Support anonymously</label></div>
+    <div class="form-field">
+      <label>Leave a message of support (optional)</label>
+      <textarea id="supporterMessage" rows="2"></textarea>
+    </div>
+    <div class="form-field">
+      <label>M-Pesa Phone Number</label>
+      <input type="tel" id="supporterPhone" placeholder="07XXXXXXXX" required>
+    </div>
+
+    <div class="error-banner" id="checkoutError"></div>
+    <div id="checkoutStatus" style="display:none;font-size:14px;color:var(--ink-soft);margin-bottom:10px;"></div>
+
+    <button class="btn btn-primary btn-block" id="payBtn">Support Now</button>
+    <button class="btn btn-secondary btn-block" style="margin-top:10px;" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+const slug = new URLSearchParams(location.search).get('slug') || location.pathname.split('/').pop();
+let campaignData = null;
+const cart = {}; // support_item_id -> { name, price, quantity }
+let customAmount = 0;
+
+const categoryLabels = {
+  funeral: 'Funeral Support', wedding: 'Wedding Support', hospital: 'Hospital Bills Support',
+  campaign: 'Campaign Funding', birthday: 'Birthday Support', food: 'Food Support'
+};
+
+async function load() {
+  try {
+    const data = await apiRequest(`/campaigns/${slug}`);
+    campaignData = data;
+    render(data);
+  } catch (err) {
+    document.getElementById('app').innerHTML = `<p>Campaign not found.</p>`;
+  }
+}
+
+function render(data) {
+  const c = data.campaign;
+  const pct = c.target_amount > 0 ? Math.min(100, Math.round((c.amount_collected / c.target_amount) * 100)) : 0;
+
+  document.getElementById('app').innerHTML = `
+    ${c.image_url ? `<img class="campaign-hero-img" src="${c.image_url}" alt="">` : ''}
+    <div style="margin-top:20px;">
+      <span class="pill" style="background:#EAF4EE;color:var(--green);padding:5px 12px;border-radius:999px;font-size:13px;font-weight:600;">${categoryLabels[c.category] || c.category}</span>
+      <h1 style="font-size:28px;margin-top:12px;">${c.title}</h1>
+      <p style="margin-top:6px;">Organized by ${c.beneficiary_name || 'FUNDme user'}${c.location ? ' · ' + c.location : ''}</p>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="receipt-figures" style="margin-top:10px;">
+        <span><strong>${formatKsh(c.amount_collected)}</strong> raised</span>
+        <span>of ${formatKsh(c.target_amount)}</span>
+      </div>
+      <div class="receipt-figures" style="margin-top:8px;">
+        <span>${data.supporters_count} Supporters</span>
+        <span style="color:var(--green);font-weight:600;text-transform:capitalize;">${c.status}</span>
+      </div>
+      <div class="share-row">
+        <button class="share-btn" onclick="copyLink()">Copy Link</button>
+        <a class="share-btn" target="_blank" href="https://wa.me/?text=${encodeURIComponent('Support ' + c.title + ': ' + location.href)}">WhatsApp</a>
+        <a class="share-btn" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(location.href)}">Facebook</a>
+        <a class="share-btn" target="_blank" href="https://twitter.com/intent/tweet?url=${encodeURIComponent(location.href)}">X</a>
+        <a class="share-btn" target="_blank" href="https://t.me/share/url?url=${encodeURIComponent(location.href)}">Telegram</a>
+      </div>
+    </div>
+
+    ${c.description ? `<div class="card" style="margin-top:20px;"><h3 style="margin-bottom:10px;">About this campaign</h3><p>${c.description}</p></div>` : ''}
+
+    <div class="card" style="margin-top:20px;">
+      <h3 style="margin-bottom:6px;">Choose your support</h3>
+      <p>Every item represents financial support — pick as many as you like.</p>
+      <div class="support-grid" id="supportGrid"></div>
+
+      <div class="form-field" style="margin-top:10px;">
+        <label>Or enter a custom amount (KSh)</label>
+        <input type="number" min="10" id="customAmountInput" placeholder="e.g. 500">
+      </div>
+
+      <div class="checkout-total">
+        <span>Total</span>
+        <strong id="liveTotal">KSh 0</strong>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="openModal()">Support Now</button>
+      <p class="form-note" style="margin-top:14px;"><a href="report.html?slug=${c.public_slug}">Report this campaign</a></p>
+    </div>
+  `;
+
+  const grid = document.getElementById('supportGrid');
+  data.support_items.forEach((item) => {
+    cart[item.id] = { name: item.name, price: Number(item.price), quantity: 0 };
+    const el = document.createElement('div');
+    el.className = 'support-item';
+    el.innerHTML = `
+      <span class="emoji">${item.icon}</span>
+      <div>${item.name}</div>
+      <div class="price">${formatKsh(item.price)}</div>
+      <div class="qty-controls">
+        <button class="qty-btn" onclick="changeQty('${item.id}', -1)">−</button>
+        <span id="qty-${item.id}">0</span>
+        <button class="qty-btn" onclick="changeQty('${item.id}', 1)">+</button>
+      </div>
+    `;
+    grid.appendChild(el);
+  });
+
+  document.getElementById('customAmountInput').addEventListener('input', (e) => {
+    customAmount = Number(e.target.value) || 0;
+    updateTotal();
+  });
+}
+
+function changeQty(id, delta) {
+  cart[id].quantity = Math.max(0, cart[id].quantity + delta);
+  document.getElementById(`qty-${id}`).textContent = cart[id].quantity;
+  updateTotal();
+}
+
+function cartTotal() {
+  return Object.values(cart).reduce((sum, it) => sum + it.quantity * it.price, 0) + customAmount;
+}
+
+function updateTotal() {
+  document.getElementById('liveTotal').textContent = formatKsh(cartTotal());
+}
+
+function openModal() {
+  const total = cartTotal();
+  if (total < 10) { alert('Please choose a support item or enter an amount of at least KSh 10.'); return; }
+
+  const summaryEl = document.getElementById('checkoutSummary');
+  const lines = Object.values(cart)
+    .filter((it) => it.quantity > 0)
+    .map((it) => `<div class="receipt-figures" style="margin-bottom:6px;"><span>${it.name} × ${it.quantity}</span><span>${formatKsh(it.quantity * it.price)}</span></div>`);
+  if (customAmount > 0) lines.push(`<div class="receipt-figures"><span>Custom Support</span><span>${formatKsh(customAmount)}</span></div>`);
+  summaryEl.innerHTML = lines.join('') || '<p>Custom support</p>';
+  document.getElementById('checkoutTotal').textContent = formatKsh(total);
+
+  document.getElementById('checkoutModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('checkoutModal').classList.remove('open');
+}
+
+function copyLink() {
+  navigator.clipboard.writeText(location.href);
+  alert('Campaign link copied!');
+}
+
+document.getElementById('payBtn').addEventListener('click', async () => {
+  const errorEl = document.getElementById('checkoutError');
+  const statusEl = document.getElementById('checkoutStatus');
+  errorEl.style.display = 'none';
+
+  const phone = document.getElementById('supporterPhone').value;
+  if (!phone) { errorEl.textContent = 'Please enter your M-Pesa phone number.'; errorEl.style.display = 'block'; return; }
+
+  const isAnonymous = document.getElementById('isAnonymous').checked;
+  const showNamePublicly = document.getElementById('showNamePublicly').checked;
+  const items = Object.entries(cart)
+    .filter(([, it]) => it.quantity > 0)
+    .map(([id, it]) => ({ support_item_id: id, name: it.name, quantity: it.quantity, unit_price: it.price }));
+
+  try {
+    document.getElementById('payBtn').disabled = true;
+    const result = await apiRequest('/payments/initialize', {
+      method: 'POST',
+      body: {
+        campaign_id: campaignData.campaign.id,
+        amount: cartTotal(),
+        phone,
+        supporter_name: document.getElementById('supporterName').value,
+        message: document.getElementById('supporterMessage').value,
+        show_name_publicly: showNamePublicly,
+        is_anonymous: isAnonymous,
+        items
+      }
+    });
+
+    statusEl.style.display = 'block';
+    statusEl.textContent = result.display_text || 'Check your phone to complete payment on M-Pesa.';
+    pollStatus(result.reference);
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.style.display = 'block';
+    document.getElementById('payBtn').disabled = false;
+  }
+});
+
+async function pollStatus(reference) {
+  const statusEl = document.getElementById('checkoutStatus');
+  for (let i = 0; i < 20; i++) {
+    await new Promise((r) => setTimeout(r, 3000));
+    try {
+      const data = await apiRequest(`/payments/${reference}/status`);
+      if (data.status === 'successful') {
+        statusEl.textContent = 'Thank you! Your support was received successfully.';
+        setTimeout(() => { closeModal(); load(); }, 1800);
+        return;
+      }
+      if (data.status === 'failed') {
+        statusEl.textContent = 'Payment was not completed. Please try again.';
+        document.getElementById('payBtn').disabled = false;
+        return;
+      }
+    } catch (e) { /* keep polling */ }
+  }
+  statusEl.textContent = 'Still waiting for confirmation — this can take a moment.';
+  document.getElementById('payBtn').disabled = false;
+}
+
+load();
+</script>
+</body>
+</html>

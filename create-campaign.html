@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create your campaign — FUNDme</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">FUNDme</div>
+  <div class="nav-links"><a href="dashboard.html">Dashboard</a></div>
+</nav>
+
+<div class="container">
+  <div class="card form-card" style="max-width:560px;">
+    <h2 style="margin-bottom:6px;">Create your campaign</h2>
+    <p style="margin-bottom:24px;">Tell supporters what this is for — you can edit this later.</p>
+
+    <div class="error-banner" id="error"></div>
+
+    <form id="campaignForm">
+      <div class="form-field">
+        <label>Funding Category</label>
+        <select id="category" required>
+          <option value="funeral">Funeral Support</option>
+          <option value="wedding">Wedding Support</option>
+          <option value="hospital">Hospital Bills Support</option>
+          <option value="campaign">Campaign Funding</option>
+          <option value="birthday">Birthday Support</option>
+          <option value="food">Food Support</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Campaign Title</label>
+        <input type="text" id="title" placeholder="e.g. Help John Pay His Hospital Bill" required>
+      </div>
+      <div class="form-field">
+        <label>Campaign Description</label>
+        <textarea id="description" rows="4" placeholder="Share the story behind your campaign"></textarea>
+      </div>
+      <div class="form-field">
+        <label>Target Amount (KSh)</label>
+        <input type="number" id="target_amount" min="0" placeholder="250000" required>
+      </div>
+      <div class="form-field">
+        <label>Campaign Image URL</label>
+        <input type="url" id="image_url" placeholder="https://...">
+      </div>
+      <div class="form-field">
+        <label>Beneficiary / Organizer Name</label>
+        <input type="text" id="beneficiary_name" required>
+      </div>
+      <div class="form-field">
+        <label>Phone Number</label>
+        <input type="tel" id="phone_number" placeholder="07XXXXXXXX" required>
+      </div>
+      <div class="form-field">
+        <label>Location</label>
+        <input type="text" id="location" placeholder="e.g. Eldoret, Kenya">
+      </div>
+      <div class="form-field">
+        <label>Additional Information (optional)</label>
+        <textarea id="extra_info" rows="2"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Create Campaign</button>
+    </form>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+requireLogin();
+
+const params = new URLSearchParams(location.search);
+const presetCategory = params.get('category');
+if (presetCategory) document.getElementById('category').value = presetCategory;
+
+document.getElementById('campaignForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById('error');
+  errorEl.style.display = 'none';
+
+  try {
+    const data = await apiRequest('/campaigns', {
+      method: 'POST',
+      auth: true,
+      body: {
+        category: document.getElementById('category').value,
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        target_amount: document.getElementById('target_amount').value,
+        image_url: document.getElementById('image_url').value,
+        beneficiary_name: document.getElementById('beneficiary_name').value,
+        phone_number: document.getElementById('phone_number').value,
+        location: document.getElementById('location').value,
+        extra_info: document.getElementById('extra_info').value
+      }
+    });
+    window.location.href = `dashboard.html?created=${data.campaign.public_slug}`;
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>

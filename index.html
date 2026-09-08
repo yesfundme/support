@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FUNDme — Support Someone. Make a Difference.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">FUNDme</div>
+  <div class="nav-links">
+    <a href="index.html" class="active">Home</a>
+    <a href="#how-it-works">How it works</a>
+    <a href="search.html">Campaigns</a>
+    <a href="login.html">Login</a>
+    <a href="index.html#categories" class="btn btn-primary" style="padding:10px 20px;font-size:14px;">Start a Campaign</a>
+  </div>
+</nav>
+
+<div class="container">
+  <section class="hero">
+    <div>
+      <h1>Support someone.<br>Make a difference.</h1>
+      <p class="tagline">Create a support campaign in minutes and receive financial support from friends, family and your community — straight to M-Pesa.</p>
+      <div class="hero-ctas">
+        <a href="#categories" class="btn btn-primary">Start a Support Campaign</a>
+        <a href="search.html" class="btn btn-secondary">Support a Campaign</a>
+      </div>
+    </div>
+    <div class="receipt-card">
+      <span class="pill">Hospital Bills Support</span>
+      <h3 style="font-size:20px;">Help John Pay His Hospital Bill</h3>
+      <div class="progress-track"><div class="progress-fill" style="width:40%"></div></div>
+      <div class="receipt-figures">
+        <span><strong>KSh 100,000</strong> raised</span>
+        <span>of KSh 250,000</span>
+      </div>
+      <div class="receipt-figures" style="margin-top:14px;">
+        <span>245 supporters</span>
+        <span style="color:var(--green);font-weight:600;">Active</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="categories" style="padding: 40px 0;">
+    <h2 class="section-title">What are you raising support for?</h2>
+    <p class="section-sub">Choose a category to get started — it takes less than a minute.</p>
+    <div class="category-grid">
+      <div class="category-card" style="--cat-color:#8B5E3C" onclick="location.href='create-campaign.html?category=funeral'">
+        <span class="icon">🕊️</span>
+        <h3>Funeral Support</h3>
+        <p>Help raise money for funeral and burial expenses.</p>
+      </div>
+      <div class="category-card" style="--cat-color:#C6428E" onclick="location.href='create-campaign.html?category=wedding'">
+        <span class="icon">💍</span>
+        <h3>Wedding Support</h3>
+        <p>Raise support for wedding and marriage-related expenses.</p>
+      </div>
+      <div class="category-card" style="--cat-color:#146C43" onclick="location.href='create-campaign.html?category=hospital'">
+        <span class="icon">🏥</span>
+        <h3>Hospital Bills Support</h3>
+        <p>Help someone meet medical and hospital expenses.</p>
+      </div>
+      <div class="category-card" style="--cat-color:#2C6E9E" onclick="location.href='create-campaign.html?category=campaign'">
+        <span class="icon">📣</span>
+        <h3>Campaign Funding</h3>
+        <p>Raise financial support for campaigns and community initiatives.</p>
+      </div>
+      <div class="category-card" style="--cat-color:#E2A63B" onclick="location.href='create-campaign.html?category=birthday'">
+        <span class="icon">🎂</span>
+        <h3>Birthday Support</h3>
+        <p>Receive contributions towards a birthday celebration.</p>
+      </div>
+      <div class="category-card" style="--cat-color:#5B8C3E" onclick="location.href='create-campaign.html?category=food'">
+        <span class="icon">🍲</span>
+        <h3>Food Support</h3>
+        <p>Raise money to help provide food and basic necessities.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="how-it-works" style="padding: 40px 0 60px;">
+    <h2 class="section-title">How it works</h2>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h3 style="font-size:18px;margin-bottom:6px;">Create</h3>
+        <p>Choose what you need support for and create your campaign.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h3 style="font-size:18px;margin-bottom:6px;">Share</h3>
+        <p>Share your unique FUNDme link with friends, family and supporters.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h3 style="font-size:18px;margin-bottom:6px;">Receive Support</h3>
+        <p>People support you through simple M-Pesa payments.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer class="footer">
+  <div class="container footer-links">
+    <span>© 2026 FUNDme</span>
+    <a href="terms.html">Terms & Conditions</a>
+    <a href="privacy.html">Privacy Policy</a>
+    <a href="refund.html">Refund Policy</a>
+    <a href="responsible-fundraising.html">Responsible Fundraising</a>
+    <a href="contact.html">Contact Us</a>
+  </div>
+</footer>
+
+</body>
+</html>

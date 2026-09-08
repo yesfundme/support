@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create your account — FUNDme</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">FUNDme</div>
+  <div class="nav-links"><a href="index.html">Home</a></div>
+</nav>
+
+<div class="container">
+  <div class="card form-card">
+    <h2 style="margin-bottom:6px;">Create your account</h2>
+    <p style="margin-bottom:24px;">Just a few details — no verification codes needed.</p>
+
+    <div class="error-banner" id="error"></div>
+
+    <form id="registerForm">
+      <div class="form-field">
+        <label>Full Name</label>
+        <input type="text" id="full_name" required>
+      </div>
+      <div class="form-field">
+        <label>Email Address</label>
+        <input type="email" id="email" required>
+      </div>
+      <div class="form-field">
+        <label>Password</label>
+        <input type="password" id="password" minlength="6" required>
+      </div>
+      <div class="form-field">
+        <label>Confirm Password</label>
+        <input type="password" id="confirm_password" minlength="6" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+    </form>
+
+    <p class="form-note">Already have an account? <a href="login.html">Login</a></p>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const category = params.get('category') || '';
+
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById('error');
+  errorEl.style.display = 'none';
+
+  try {
+    const data = await apiRequest('/auth/register', {
+      method: 'POST',
+      body: {
+        full_name: document.getElementById('full_name').value,
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+        confirm_password: document.getElementById('confirm_password').value
+      }
+    });
+    localStorage.setItem('fundme_token', data.token);
+    localStorage.setItem('fundme_user', JSON.stringify(data.user));
+    window.location.href = `create-campaign.html?category=${category}`;
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>

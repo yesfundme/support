@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report a Campaign — FUNDme</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav class="nav"><div class="nav-logo">FUNDme</div><div class="nav-links"><a href="index.html">Home</a></div></nav>
+<div class="container">
+  <div class="card form-card">
+    <h2 style="margin-bottom:6px;">Report this campaign</h2>
+    <p style="margin-bottom:24px;">Let us know if something looks suspicious or inappropriate. Our team will review it.</p>
+    <div class="error-banner" id="error"></div>
+    <div class="form-field"><label>What's the issue?</label><textarea id="reason" rows="4" required></textarea></div>
+    <div class="form-field"><label>Your email (optional)</label><input type="email" id="reporter_email"></div>
+    <button class="btn btn-primary btn-block" id="submitBtn">Submit Report</button>
+  </div>
+</div>
+<script src="js/api.js"></script>
+<script>
+const slug = new URLSearchParams(location.search).get('slug');
+document.getElementById('submitBtn').addEventListener('click', async () => {
+  const errorEl = document.getElementById('error');
+  errorEl.style.display = 'none';
+  try {
+    await apiRequest(`/campaigns/${slug}/report`, {
+      method: 'POST',
+      body: { reason: document.getElementById('reason').value, reporter_email: document.getElementById('reporter_email').value }
+    });
+    alert('Thank you — your report has been submitted.');
+    location.href = `campaign.html?slug=${slug}`;
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>

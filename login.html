@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — FUNDme</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">FUNDme</div>
+  <div class="nav-links"><a href="index.html">Home</a></div>
+</nav>
+
+<div class="container">
+  <div class="card form-card">
+    <h2 style="margin-bottom:6px;">Welcome back</h2>
+    <p style="margin-bottom:24px;">Log in to manage your campaign.</p>
+
+    <div class="error-banner" id="error"></div>
+
+    <form id="loginForm">
+      <div class="form-field">
+        <label>Email</label>
+        <input type="email" id="email" required>
+      </div>
+      <div class="form-field">
+        <label>Password</label>
+        <input type="password" id="password" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Login</button>
+    </form>
+
+    <p class="form-note"><a href="forgot-password.html">Forgot Password?</a></p>
+    <p class="form-note">New here? <a href="index.html#categories">Start a campaign</a></p>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById('error');
+  errorEl.style.display = 'none';
+
+  try {
+    const data = await apiRequest('/auth/login', {
+      method: 'POST',
+      body: {
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value
+      }
+    });
+    localStorage.setItem('fundme_token', data.token);
+    localStorage.setItem('fundme_user', JSON.stringify(data.user));
+    window.location.href = data.user.role === 'admin' ? 'admin/index.html' : 'dashboard.html';
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — FUNDme</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .tabs { display:flex; gap:8px; margin: 20px 0; flex-wrap:wrap; }
+  .tab-btn { padding:10px 18px; border-radius:999px; border:1.5px solid var(--line); background:var(--surface); cursor:pointer; font-weight:600; }
+  .tab-btn.active { background:var(--green); color:#fff; border-color:var(--green); }
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">FUNDme <span style="color:var(--ink-soft);font-weight:400;font-size:14px;">Admin</span></div>
+  <div class="nav-links"><a href="#" onclick="logout()">Logout</a></div>
+</nav>
+
+<div class="container" style="padding:32px 20px 60px;">
+  <h1 style="font-size:26px;">Overview</h1>
+  <div class="stat-grid" id="overviewStats"><p>Loading…</p></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="users" onclick="switchTab('users')">Users</button>
+    <button class="tab-btn" data-tab="campaigns" onclick="switchTab('campaigns')">Campaigns</button>
+    <button class="tab-btn" data-tab="withdrawals" onclick="switchTab('withdrawals')">Withdrawals</button>
+    <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">Settings</button>
+  </div>
+
+  <div class="tab-panel active" id="tab-users"><div class="card"><div id="usersBox">Loading…</div></div></div>
+  <div class="tab-panel" id="tab-campaigns"><div class="card"><div id="campaignsBox">Loading…</div></div></div>
+  <div class="tab-panel" id="tab-withdrawals"><div class="card"><div id="withdrawalsBox">Loading…</div></div></div>
+  <div class="tab-panel" id="tab-settings">
+    <div class="card" style="max-width:420px;">
+      <h3 style="margin-bottom:14px;">Platform Fee</h3>
+      <div class="form-field"><label>Fee percentage (%)</label><input type="number" id="feePercent" min="0" max="100"></div>
+      <div class="form-field"><label>Flat fee (KSh)</label><input type="number" id="feeFlat" min="0"></div>
+      <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+requireLogin();
+const user = getCurrentUser();
+if (!user || user.role !== 'admin') location.href = '../login.html';
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach((p) => p.classList.toggle('active', p.id === `tab-${tab}`));
+}
+
+async function loadOverview() {
+  const d = await apiRequest('/admin/overview', { auth: true });
+  document.getElementById('overviewStats').innerHTML = `
+    <div class="card stat-card"><div class="label">Total Users</div><div class="value">${d.total_users}</div></div>
+    <div class="card stat-card"><div class="label">Active Campaigns</div><div class="value">${d.active_campaigns}</div></div>
+    <div class="card stat-card"><div class="label">Total Collected</div><div class="value">${formatKsh(d.total_collected)}</div></div>
+    <div class="card stat-card"><div class="label">Total Withdrawn</div><div class="value">${formatKsh(d.total_withdrawn)}</div></div>
+    <div class="card stat-card"><div class="label">Available Balances</div><div class="value">${formatKsh(d.available_campaign_balances)}</div></div>
+    <div class="card stat-card"><div class="label">Pending Withdrawals</div><div class="value">${formatKsh(d.pending_withdrawals)}</div></div>
+  `;
+}
+
+async function loadUsers() {
+  const { users } = await apiRequest('/admin/users', { auth: true });
+  document.getElementById('usersBox').innerHTML = `
+    <table class="data-table">
+      <thead><tr><th>Name</th><th>Email</th><th>Collected</th><th>Status</th><th></th></tr></thead>
+      <tbody>${users.map((u) => {
+        const collected = (u.campaigns || []).reduce((s, c) => s + Number(c.amount_collected), 0);
+        return `<tr>
+          <td data-label="Name">${u.full_name}</td>
+          <td data-label="Email">${u.email}</td>
+          <td data-label="Collected">${formatKsh(collected)}</td>
+          <td data-label="Status"><span class="badge ${u.status === 'active' ? 'badge-success' : 'badge-failed'}">${u.status}</span></td>
+          <td><button class="btn btn-secondary" style="padding:6px 14px;font-size:13px;" onclick="toggleUserStatus('${u.id}','${u.status}')">${u.status === 'active' ? 'Suspend' : 'Activate'}</button></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+}
+
+async function toggleUserStatus(id, current) {
+  await apiRequest(`/admin/users/${id}/status`, { method: 'PATCH', auth: true, body: { status: current === 'active' ? 'suspended' : 'active' } });
+  loadUsers();
+}
+
+async function loadCampaigns() {
+  const { campaigns } = await apiRequest('/admin/campaigns', { auth: true });
+  document.getElementById('campaignsBox').innerHTML = `
+    <table class="data-table">
+      <thead><tr><th>Title</th><th>Category</th><th>Collected</th><th>Status</th><th></th></tr></thead>
+      <tbody>${campaigns.map((c) => `
+        <tr>
+          <td data-label="Title"><a href="../campaign.html?slug=${c.public_slug}" target="_blank">${c.title}</a></td>
+          <td data-label="Category">${c.category}</td>
+          <td data-label="Collected">${formatKsh(c.amount_collected)}</td>
+          <td data-label="Status"><span class="badge ${c.status === 'active' ? 'badge-success' : 'badge-pending'}">${c.status}</span></td>
+          <td>
+            <button class="btn btn-secondary" style="padding:6px 12px;font-size:13px;" onclick="toggleCampaignStatus('${c.id}','${c.status}')">${c.status === 'active' ? 'Suspend' : 'Activate'}</button>
+            <button class="btn btn-secondary" style="padding:6px 12px;font-size:13px;" onclick="deleteCampaign('${c.id}')">Delete</button>
+          </td>
+        </tr>`).join('')}</tbody>
+    </table>`;
+}
+
+async function toggleCampaignStatus(id, current) {
+  await apiRequest(`/admin/campaigns/${id}`, { method: 'PATCH', auth: true, body: { status: current === 'active' ? 'suspended' : 'active' } });
+  loadCampaigns();
+}
+async function deleteCampaign(id) {
+  if (!confirm('Delete this campaign permanently?')) return;
+  await apiRequest(`/admin/campaigns/${id}`, { method: 'DELETE', auth: true });
+  loadCampaigns();
+}
+
+async function loadWithdrawals() {
+  const { withdrawals } = await apiRequest('/admin/withdrawals', { auth: true });
+  document.getElementById('withdrawalsBox').innerHTML = `
+    <table class="data-table">
+      <thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Destination</th><th>Status</th><th></th></tr></thead>
+      <tbody>${withdrawals.map((w) => `
+        <tr>
+          <td data-label="User">${w.users?.full_name || ''}</td>
+          <td data-label="Amount">${formatKsh(w.amount)}</td>
+          <td data-label="Method" style="text-transform:capitalize;">${w.method}</td>
+          <td data-label="Destination">${w.method === 'bank' ? `${w.bank_name} · ${w.account_number}` : w.mpesa_phone}</td>
+          <td data-label="Status"><span class="badge ${w.status === 'paid' ? 'badge-success' : w.status === 'failed' ? 'badge-failed' : 'badge-pending'}">${w.status}</span></td>
+          <td>
+            ${w.status === 'pending' ? `<button class="btn btn-secondary" style="padding:6px 12px;font-size:13px;" onclick="updateWithdrawal('${w.id}','processing')">Approve</button>` : ''}
+            ${w.status === 'processing' ? `<button class="btn btn-primary" style="padding:6px 12px;font-size:13px;" onclick="updateWithdrawal('${w.id}','paid')">Mark as Paid</button>` : ''}
+            ${['pending','processing'].includes(w.status) ? `<button class="btn btn-secondary" style="padding:6px 12px;font-size:13px;" onclick="updateWithdrawal('${w.id}','failed')">Reject</button>` : ''}
+          </td>
+        </tr>`).join('')}</tbody>
+    </table>`;
+}
+
+async function updateWithdrawal(id, status) {
+  await apiRequest(`/admin/withdrawals/${id}/status`, { method: 'PATCH', auth: true, body: { status } });
+  loadWithdrawals();
+  loadOverview();
+}
+
+async function saveSettings() {
+  await apiRequest('/admin/settings', {
+    method: 'PATCH', auth: true,
+    body: { platform_fee_percent: document.getElementById('feePercent').value, platform_fee_flat: document.getElementById('feeFlat').value }
+  });
+  alert('Settings saved.');
+}
+
+loadOverview();
+loadUsers();
+loadCampaigns();
+loadWithdrawals();
+</script>
+</body>
+</html>
