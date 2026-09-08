@@ -1,6 +1,6 @@
 // Shared API helper for FUNDme frontend pages.
 // Change API_BASE to your deployed backend URL (e.g. Render).
-const API_BASE = window.FUNDME_API_BASE || 'https://fundme-api.onrender.com/api';
+const API_BASE = window.FUNDME_API_BASE || 'https://yesfundme.onrender.com/api';
 
 function authHeaders() {
   const token = localStorage.getItem('fundme_token');
