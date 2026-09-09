@@ -20,7 +20,7 @@
 <nav class="nav">
   <div class="nav-logo"><span class="brand-yes">Yes</span><span class="brand-fund">FUNDme</span></div>
   <button class="nav-toggle" onclick="toggleNav()" aria-label="Menu"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
-  <div class="nav-links"><a href="index.html">Home</a><a href="search.html">Campaigns</a></div>
+  <div class="nav-links"><a href="index.html" id="navHomeLink">Home</a><a href="search.html">Campaigns</a></div>
 </nav>
 
 <div class="container" id="app" style="padding:32px 20px 60px;">
@@ -65,6 +65,14 @@ const slug = new URLSearchParams(location.search).get('slug') || location.pathna
 let campaignData = null;
 const cart = {}; // support_item_id -> { name, price, quantity }
 let customAmount = 0;
+
+// If the visitor is logged in, "Home" becomes "Dashboard" so campaign owners
+// (and any logged-in supporter) can get back to their own account easily.
+if (localStorage.getItem('fundme_token')) {
+  const homeLink = document.getElementById('navHomeLink');
+  homeLink.textContent = 'Dashboard';
+  homeLink.href = 'dashboard.html';
+}
 
 const categoryLabels = {
   funeral: 'Funeral Support', wedding: 'Wedding Support', hospital: 'Hospital Bills Support',

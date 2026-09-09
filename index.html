@@ -17,7 +17,7 @@
     <a href="index.html" class="active">Home</a>
     <a href="#how-it-works">How it works</a>
     <a href="search.html">Campaigns</a>
-    <a href="login.html">Login</a>
+    <a href="login.html" id="navLoginLink">Login</a>
     <a href="index.html#categories" class="btn btn-primary" style="padding:10px 20px;font-size:14px;">Start a Campaign</a>
   </div>
 </nav>
@@ -126,6 +126,13 @@ document.querySelectorAll('.nav-links a').forEach(function(a) {
     document.querySelector('.nav-links').classList.remove('open');
   });
 });
+
+// If the visitor is logged in, "Login" becomes "Dashboard".
+if (localStorage.getItem('fundme_token')) {
+  const loginLink = document.getElementById('navLoginLink');
+  loginLink.textContent = 'Dashboard';
+  loginLink.href = 'dashboard.html';
+}
 </script>
 </body>
 </html>
