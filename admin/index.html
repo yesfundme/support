@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin — FUNDme</title>
+<title>Admin — YesFUNDme</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/style.css">
 <style>
@@ -16,7 +16,8 @@
 </head>
 <body>
 <nav class="nav">
-  <div class="nav-logo">FUNDme <span style="color:var(--ink-soft);font-weight:400;font-size:14px;">Admin</span></div>
+  <div class="nav-logo"><span class="brand-yes">Yes</span><span class="brand-fund">FUNDme</span> <span style="color:var(--ink-soft);font-weight:400;font-size:14px;">Admin</span></div>
+  <button class="nav-toggle" onclick="toggleNav()" aria-label="Menu"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
   <div class="nav-links"><a href="#" onclick="logout()">Logout</a></div>
 </nav>
 
@@ -46,6 +47,7 @@
 
 <script src="../js/api.js"></script>
 <script>
+window.FUNDME_LOGIN_PATH = '../login.html';
 requireLogin();
 const user = getCurrentUser();
 if (!user || user.role !== 'admin') location.href = '../login.html';
@@ -158,6 +160,16 @@ loadOverview();
 loadUsers();
 loadCampaigns();
 loadWithdrawals();
+</script>
+<script>
+function toggleNav() {
+  document.querySelector('.nav-links').classList.toggle('open');
+}
+document.querySelectorAll('.nav-links a').forEach(function(a) {
+  a.addEventListener('click', function() {
+    document.querySelector('.nav-links').classList.remove('open');
+  });
+});
 </script>
 </body>
 </html>

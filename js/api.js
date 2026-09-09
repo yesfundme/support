@@ -33,12 +33,12 @@ function getCurrentUser() {
 
 function requireLogin() {
   if (!localStorage.getItem('fundme_token')) {
-    window.location.href = 'login.html';
+    window.location.href = window.FUNDME_LOGIN_PATH || 'login.html';
   }
 }
 
 function logout() {
   localStorage.removeItem('fundme_token');
   localStorage.removeItem('fundme_user');
-  window.location.href = 'login.html';
+  window.location.href = window.FUNDME_LOGIN_PATH || 'login.html';
 }

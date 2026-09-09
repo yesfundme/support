@@ -12,6 +12,7 @@
 
 <nav class="nav">
   <div class="nav-logo"><span class="brand-yes">Yes</span><span class="brand-fund">FUNDme</span></div>
+  <button class="nav-toggle" onclick="toggleNav()" aria-label="Menu"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
   <div class="nav-links">
     <a href="index.html" class="active">Home</a>
     <a href="#how-it-works">How it works</a>
@@ -116,5 +117,15 @@
   </div>
 </footer>
 
+<script>
+function toggleNav() {
+  document.querySelector('.nav-links').classList.toggle('open');
+}
+document.querySelectorAll('.nav-links a').forEach(function(a) {
+  a.addEventListener('click', function() {
+    document.querySelector('.nav-links').classList.remove('open');
+  });
+});
+</script>
 </body>
 </html>

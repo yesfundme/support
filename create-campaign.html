@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Create your campaign — FUNDme</title>
+<title>Create your campaign — YesFUNDme</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <nav class="nav">
-  <div class="nav-logo">FUNDme</div>
+  <div class="nav-logo"><span class="brand-yes">Yes</span><span class="brand-fund">FUNDme</span></div>
+  <button class="nav-toggle" onclick="toggleNav()" aria-label="Menu"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
   <div class="nav-links"><a href="dashboard.html">Dashboard</a></div>
 </nav>
 
@@ -45,8 +46,11 @@
         <input type="number" id="target_amount" min="0" placeholder="250000" required>
       </div>
       <div class="form-field">
-        <label>Campaign Image URL</label>
-        <input type="url" id="image_url" placeholder="https://...">
+        <label>Campaign Image</label>
+        <input type="file" id="image_file" accept="image/*">
+        <div id="imagePreviewBox" style="margin-top:10px;display:none;">
+          <img id="imagePreview" style="width:100%;max-height:180px;object-fit:cover;border-radius:12px;">
+        </div>
       </div>
       <div class="form-field">
         <label>Beneficiary / Organizer Name</label>
@@ -77,12 +81,46 @@ const params = new URLSearchParams(location.search);
 const presetCategory = params.get('category');
 if (presetCategory) document.getElementById('category').value = presetCategory;
 
+document.getElementById('image_file').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const preview = document.getElementById('imagePreview');
+  preview.src = URL.createObjectURL(file);
+  document.getElementById('imagePreviewBox').style.display = 'block';
+});
+
+async function uploadCampaignImage(file) {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  const res = await fetch(`${API_BASE}/uploads/campaign-image`, {
+    method: 'POST',
+    headers: authHeaders(), // no Content-Type - the browser sets the multipart boundary
+    body: formData
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Could not upload image');
+  return data.url;
+}
+
 document.getElementById('campaignForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const errorEl = document.getElementById('error');
   errorEl.style.display = 'none';
+  const submitBtn = e.target.querySelector('button[type="submit"]');
 
   try {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating…';
+
+    let image_url = '';
+    const imageFile = document.getElementById('image_file').files[0];
+    if (imageFile) {
+      submitBtn.textContent = 'Uploading image…';
+      image_url = await uploadCampaignImage(imageFile);
+      submitBtn.textContent = 'Creating…';
+    }
+
     const data = await apiRequest('/campaigns', {
       method: 'POST',
       auth: true,
@@ -91,7 +129,7 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
         title: document.getElementById('title').value,
         description: document.getElementById('description').value,
         target_amount: document.getElementById('target_amount').value,
-        image_url: document.getElementById('image_url').value,
+        image_url,
         beneficiary_name: document.getElementById('beneficiary_name').value,
         phone_number: document.getElementById('phone_number').value,
         location: document.getElementById('location').value,
@@ -102,7 +140,19 @@ document.getElementById('campaignForm').addEventListener('submit', async (e) => 
   } catch (err) {
     errorEl.textContent = err.message;
     errorEl.style.display = 'block';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Create Campaign';
   }
+});
+</script>
+<script>
+function toggleNav() {
+  document.querySelector('.nav-links').classList.toggle('open');
+}
+document.querySelectorAll('.nav-links a').forEach(function(a) {
+  a.addEventListener('click', function() {
+    document.querySelector('.nav-links').classList.remove('open');
+  });
 });
 </script>
 </body>
