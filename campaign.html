@@ -190,6 +190,13 @@ function closeModal() {
   document.getElementById('checkoutModal').classList.remove('open');
 }
 
+document.getElementById('showNamePublicly').addEventListener('change', (e) => {
+  if (e.target.checked) document.getElementById('isAnonymous').checked = false;
+});
+document.getElementById('isAnonymous').addEventListener('change', (e) => {
+  if (e.target.checked) document.getElementById('showNamePublicly').checked = false;
+});
+
 function copyLink() {
   navigator.clipboard.writeText(location.href);
   alert('Campaign link copied!');
