@@ -32,19 +32,19 @@
         <a href="search.html" class="btn btn-secondary">Support a Campaign</a>
       </div>
     </div>
-    <div class="receipt-card">
-      <span class="pill">Hospital Bills Support</span>
-      <h3 style="font-size:20px;">Help John Pay His Hospital Bill</h3>
-      <div class="progress-track"><div class="progress-fill" style="width:40%"></div></div>
+    <a href="campaign.html?slug=donate-to-african-child" class="receipt-card" id="heroCard" style="display:block;text-decoration:none;color:inherit;cursor:pointer;">
+      <span class="pill" id="heroCategory">Campaign Funding</span>
+      <h3 style="font-size:20px;" id="heroTitle">Donate to an African Child</h3>
+      <div class="progress-track"><div class="progress-fill" id="heroProgress" style="width:0%"></div></div>
       <div class="receipt-figures">
-        <span><strong>KSh 100,000</strong> raised</span>
-        <span>of KSh 250,000</span>
+        <span><strong id="heroRaised">KSh 0</strong> raised</span>
+        <span id="heroTarget">of KSh 0</span>
       </div>
       <div class="receipt-figures" style="margin-top:14px;">
-        <span>245 supporters</span>
-        <span style="color:var(--green);font-weight:600;">Active</span>
+        <span id="heroSupporters">0 supporters</span>
+        <span style="color:var(--green);font-weight:600;" id="heroStatus">Active</span>
       </div>
-    </div>
+    </a>
   </section>
 
   <section id="categories" style="padding: 40px 0;">
@@ -133,6 +133,34 @@ if (localStorage.getItem('fundme_token')) {
   loginLink.textContent = 'Dashboard';
   loginLink.href = 'dashboard.html';
 }
+
+// Pull live numbers into the hero card so it reflects the real campaign
+// instead of showing static example figures.
+const categoryLabels = {
+  funeral: 'Funeral Support', wedding: 'Wedding Support', hospital: 'Hospital Bills Support',
+  campaign: 'Campaign Funding', birthday: 'Birthday Support', food: 'Food Support'
+};
+
+(async function loadHeroCampaign() {
+  try {
+    const res = await fetch(`${window.FUNDME_API_BASE || 'https://yesfundme.onrender.com/api'}/campaigns/donate-to-african-child`);
+    if (!res.ok) return; // leave the card's default placeholder text in place
+    const data = await res.json();
+    const c = data.campaign;
+    const pct = c.target_amount > 0 ? Math.min(100, Math.round((c.amount_collected / c.target_amount) * 100)) : 0;
+    const fmt = (n) => 'KSh ' + Number(n || 0).toLocaleString('en-KE', { maximumFractionDigits: 0 });
+
+    document.getElementById('heroCategory').textContent = categoryLabels[c.category] || c.category;
+    document.getElementById('heroTitle').textContent = c.title;
+    document.getElementById('heroProgress').style.width = pct + '%';
+    document.getElementById('heroRaised').textContent = fmt(c.amount_collected);
+    document.getElementById('heroTarget').textContent = 'of ' + fmt(c.target_amount);
+    document.getElementById('heroSupporters').textContent = `${data.supporters_count} supporters`;
+    document.getElementById('heroStatus').textContent = c.status.charAt(0).toUpperCase() + c.status.slice(1);
+  } catch (e) {
+    // Silently keep whatever's already in the markup if the fetch fails.
+  }
+})();
 </script>
 </body>
 </html>
