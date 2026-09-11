@@ -14,6 +14,7 @@
   .share-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
   .share-btn { padding:10px 16px; border-radius:var(--radius-pill); border:1.5px solid var(--line); font-size:14px; cursor:pointer; background:var(--surface); }
   .checkbox-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:14px; }
+  .method-btn.active { border-color:var(--green) !important; color:var(--green); background:#EAF4EE !important; }
 </style>
 </head>
 <body>
@@ -46,9 +47,17 @@
       <label>Leave a message of support (optional)</label>
       <textarea id="supporterMessage" rows="2"></textarea>
     </div>
+
     <div class="form-field">
+      <label>Payment Method</label>
+      <div class="method-toggle" style="display:flex;gap:10px;">
+        <button type="button" id="btnMpesaMethod" class="method-btn active" onclick="setPaymentMethod('mpesa')" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;font-weight:600;">M-Pesa</button>
+        <button type="button" id="btnCardMethod" class="method-btn" onclick="setPaymentMethod('card')" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;font-weight:600;">Card</button>
+      </div>
+    </div>
+    <div class="form-field" id="phoneField">
       <label>M-Pesa Phone Number</label>
-      <input type="tel" id="supporterPhone" placeholder="07XXXXXXXX" required>
+      <input type="tel" id="supporterPhone" placeholder="07XXXXXXXX">
     </div>
 
     <div class="error-banner" id="checkoutError"></div>
@@ -65,6 +74,7 @@ const slug = new URLSearchParams(location.search).get('slug') || location.pathna
 let campaignData = null;
 const cart = {}; // support_item_id -> { name, price, quantity }
 let customAmount = 0;
+let paymentMethod = 'mpesa';
 
 // If the visitor is logged in, "Home" becomes "Dashboard" so campaign owners
 // (and any logged-in supporter) can get back to their own account easily.
@@ -72,6 +82,30 @@ if (localStorage.getItem('fundme_token')) {
   const homeLink = document.getElementById('navHomeLink');
   homeLink.textContent = 'Dashboard';
   homeLink.href = 'dashboard.html';
+}
+
+// Detect whether the visitor appears to be outside Kenya (IP-based, no
+// permission prompt) and default the payment method to Card in that case,
+// since M-Pesa STK push only works for Kenyan phone numbers. The toggle
+// stays fully manual either way, so a wrong guess (e.g. VPN) is a one-tap fix.
+(async function detectPaymentMethod() {
+  try {
+    const res = await fetch('https://ipapi.co/json/');
+    if (!res.ok) return;
+    const geo = await res.json();
+    if (geo.country_code && geo.country_code !== 'KE') {
+      setPaymentMethod('card');
+    }
+  } catch (e) {
+    // Silently ignore - default (M-Pesa) stands, still switchable by hand.
+  }
+})();
+
+function setPaymentMethod(m) {
+  paymentMethod = m;
+  document.getElementById('btnMpesaMethod').classList.toggle('active', m === 'mpesa');
+  document.getElementById('btnCardMethod').classList.toggle('active', m === 'card');
+  document.getElementById('phoneField').style.display = m === 'mpesa' ? 'block' : 'none';
 }
 
 const categoryLabels = {
@@ -216,7 +250,11 @@ document.getElementById('payBtn').addEventListener('click', async () => {
   errorEl.style.display = 'none';
 
   const phone = document.getElementById('supporterPhone').value;
-  if (!phone) { errorEl.textContent = 'Please enter your M-Pesa phone number.'; errorEl.style.display = 'block'; return; }
+  if (paymentMethod === 'mpesa' && !phone) {
+    errorEl.textContent = 'Please enter your M-Pesa phone number.';
+    errorEl.style.display = 'block';
+    return;
+  }
 
   const isAnonymous = document.getElementById('isAnonymous').checked;
   const showNamePublicly = document.getElementById('showNamePublicly').checked;
@@ -231,7 +269,9 @@ document.getElementById('payBtn').addEventListener('click', async () => {
       body: {
         campaign_id: campaignData.campaign.id,
         amount: cartTotal(),
-        phone,
+        method: paymentMethod,
+        phone: paymentMethod === 'mpesa' ? phone : undefined,
+        callback_url: paymentMethod === 'card' ? `${location.origin}${location.pathname}?slug=${slug}` : undefined,
         supporter_name: document.getElementById('supporterName').value,
         message: document.getElementById('supporterMessage').value,
         show_name_publicly: showNamePublicly,
@@ -239,6 +279,13 @@ document.getElementById('payBtn').addEventListener('click', async () => {
         items
       }
     });
+
+    if (result.method === 'card') {
+      // Hand off to Paystack's hosted card checkout. Paystack redirects back
+      // to callback_url (with ?reference=...) once the supporter finishes.
+      window.location.href = result.authorization_url;
+      return;
+    }
 
     statusEl.style.display = 'block';
     statusEl.textContent = result.display_text || 'Check your phone to complete payment on M-Pesa.';
@@ -252,6 +299,7 @@ document.getElementById('payBtn').addEventListener('click', async () => {
 
 async function pollStatus(reference) {
   const statusEl = document.getElementById('checkoutStatus');
+  statusEl.style.display = 'block';
   for (let i = 0; i < 20; i++) {
     await new Promise((r) => setTimeout(r, 3000));
     try {
@@ -270,6 +318,17 @@ async function pollStatus(reference) {
   }
   statusEl.textContent = 'Still waiting for confirmation — this can take a moment.';
   document.getElementById('payBtn').disabled = false;
+}
+
+// If the supporter just landed back here from Paystack's card checkout
+// (reference/trxref appended to the URL), pick up polling immediately.
+const returnedReference = new URLSearchParams(location.search).get('reference')
+  || new URLSearchParams(location.search).get('trxref');
+if (returnedReference) {
+  document.getElementById('checkoutModal').classList.add('open');
+  document.getElementById('checkoutSummary').innerHTML = '<p>Finishing up your card payment…</p>';
+  document.getElementById('payBtn').style.display = 'none';
+  pollStatus(returnedReference);
 }
 
 load();
