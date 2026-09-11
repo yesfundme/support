@@ -73,9 +73,9 @@
 <script>
 const slug = new URLSearchParams(location.search).get('slug') || location.pathname.split('/').pop();
 let campaignData = null;
+let paymentMethod = 'mpesa';
 const cart = {}; // support_item_id -> { name, price, quantity }
 let customAmount = 0;
-let paymentMethod = 'mpesa';
 
 // If the visitor is logged in, "Home" becomes "Dashboard" so campaign owners
 // (and any logged-in supporter) can get back to their own account easily.
@@ -131,7 +131,6 @@ function formatMoney(amountKes) {
   return formatKsh(amountKes);
 }
 
-let paymentMethod = 'mpesa';
 function setPaymentMethod(m) {
   paymentMethod = m;
   document.getElementById('btnMpesaMethod').classList.toggle('active', m === 'mpesa');
