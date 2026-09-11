@@ -95,11 +95,28 @@ if (localStorage.getItem('fundme_token')) {
 let isInternationalVisitor = false;
 let kesToUsdRate = null;
 
-async function detectVisitorCurrency() {
-  // Testing hook: open the campaign page with ?intl=1 in the URL to force
-  // the international (USD) display path without needing a VPN or actually
-  // being outside Kenya. Remove the query param to see the normal KSh view.
-  if (new URLSearchParams(location.search).get('intl') === '1') {
+async function fetchUsdRate() {
+  if (kesToUsdRate) return kesToUsdRate;
+  try {
+    const rateRes = await fetch('https://open.er-api.com/v6/latest/KES');
+    const rateData = await rateRes.json();
+    kesToUsdRate = rateData.rates && rateData.rates.USD;
+    console.log('FUNDme: KES→USD rate in use:', kesToUsdRate);
+  } catch (e) { /* rate stays null - formatMoney falls back to KSh */ }
+  return kesToUsdRate;
+}
+
+// A campaign can force USD display for every visitor regardless of location
+// (campaigns.display_currency = 'usd' in the database) - useful for
+// internationally-facing appeals. Otherwise it falls back to per-visitor
+// IP-based detection as before. Either way, only the display changes -
+// amounts sent to the backend/Paystack always stay in KES.
+async function detectVisitorCurrency(campaign) {
+  if (campaign && campaign.display_currency === 'usd') {
+    isInternationalVisitor = true;
+  } else if (new URLSearchParams(location.search).get('intl') === '1') {
+    // Testing hook: open the page with ?intl=1 to preview the USD path
+    // without needing a VPN or an actual campaign override.
     isInternationalVisitor = true;
   } else {
     try {
@@ -111,14 +128,7 @@ async function detectVisitorCurrency() {
     } catch (e) { /* default: treat as Kenyan (KSh), the safe default */ }
   }
 
-  if (isInternationalVisitor) {
-    try {
-      const rateRes = await fetch('https://open.er-api.com/v6/latest/KES');
-      const rateData = await rateRes.json();
-      kesToUsdRate = rateData.rates && rateData.rates.USD;
-      console.log('FUNDme: KES→USD rate in use:', kesToUsdRate);
-    } catch (e) { /* rate stays null - formatMoney falls back to KSh */ }
-  }
+  if (isInternationalVisitor) await fetchUsdRate();
 }
 
 // Formats a KES amount for display: USD for international visitors (when a
@@ -147,6 +157,8 @@ async function load() {
   try {
     const data = await apiRequest(`/campaigns/${slug}`);
     campaignData = data;
+    await detectVisitorCurrency(data.campaign);
+    if (isInternationalVisitor) setPaymentMethod('card');
     render(data);
   } catch (err) {
     document.getElementById('app').innerHTML = `<p>Campaign not found.</p>`;
@@ -184,7 +196,7 @@ function render(data) {
       </div>
     </div>
 
-    ${c.description ? `<div class="card" style="margin-top:20px;"><h3 style="margin-bottom:10px;">About this campaign</h3><p>${c.description}</p></div>` : ''}
+    ${c.description ? `<div class="card" style="margin-top:20px;"><h3 style="margin-bottom:10px;">About this campaign</h3><div style="white-space:pre-line;">${c.description}</div></div>` : ''}
 
     <div class="card" style="margin-top:20px;">
       <h3 style="margin-bottom:6px;">Choose your support</h3>
@@ -381,11 +393,7 @@ if (returnedReference) {
   pollStatus(returnedReference);
 }
 
-(async function init() {
-  await detectVisitorCurrency();
-  if (isInternationalVisitor) setPaymentMethod('card');
-  load();
-})();
+load();
 </script>
 <script>
 function toggleNav() {
