@@ -36,6 +36,7 @@
       <span>Total</span>
       <strong id="checkoutTotal">KSh 0</strong>
     </div>
+    <div id="fxEstimate" style="display:none;text-align:right;font-size:13px;color:var(--ink-soft);margin-top:-8px;margin-bottom:10px;"></div>
 
     <div class="form-field" style="margin-top:14px;">
       <label>Your Name (optional)</label>
@@ -84,23 +85,45 @@ if (localStorage.getItem('fundme_token')) {
   homeLink.href = 'dashboard.html';
 }
 
-// Detect whether the visitor appears to be outside Kenya (IP-based, no
-// permission prompt) and default the payment method to Card in that case,
-// since M-Pesa STK push only works for Kenyan phone numbers. The toggle
-// stays fully manual either way, so a wrong guess (e.g. VPN) is a one-tap fix.
-(async function detectPaymentMethod() {
+// Currency handling: everything charged to Paystack is ALWAYS in KES,
+// for every payer, on every method — that never changes. What changes for
+// a visitor detected outside Kenya is purely DISPLAY: item prices, the
+// running total, and the checkout summary render in USD instead of KSh,
+// converted at a live rate. Internally every amount (cart totals, the
+// custom-amount field, what's sent to /payments/initialize) stays in KES,
+// so the backend and Paystack integration need no currency changes at all.
+let isInternationalVisitor = false;
+let kesToUsdRate = null;
+
+async function detectVisitorCurrency() {
   try {
     const res = await fetch('https://ipapi.co/json/');
-    if (!res.ok) return;
-    const geo = await res.json();
-    if (geo.country_code && geo.country_code !== 'KE') {
-      setPaymentMethod('card');
+    if (res.ok) {
+      const geo = await res.json();
+      isInternationalVisitor = !!(geo.country_code && geo.country_code !== 'KE');
     }
-  } catch (e) {
-    // Silently ignore - default (M-Pesa) stands, still switchable by hand.
-  }
-})();
+  } catch (e) { /* default: treat as Kenyan (KSh), the safe default */ }
 
+  if (isInternationalVisitor) {
+    try {
+      const rateRes = await fetch('https://open.er-api.com/v6/latest/KES');
+      const rateData = await rateRes.json();
+      kesToUsdRate = rateData.rates && rateData.rates.USD;
+    } catch (e) { /* rate stays null - formatMoney falls back to KSh */ }
+  }
+}
+
+// Formats a KES amount for display: USD for international visitors (when a
+// rate was successfully fetched), KSh for everyone else - Kenyan visitors
+// are completely unaffected either way.
+function formatMoney(amountKes) {
+  if (isInternationalVisitor && kesToUsdRate) {
+    return `$${(amountKes * kesToUsdRate).toFixed(2)}`;
+  }
+  return formatKsh(amountKes);
+}
+
+let paymentMethod = 'mpesa';
 function setPaymentMethod(m) {
   paymentMethod = m;
   document.getElementById('btnMpesaMethod').classList.toggle('active', m === 'mpesa');
@@ -162,7 +185,7 @@ function render(data) {
       <div class="support-grid" id="supportGrid"></div>
 
       <div class="form-field" style="margin-top:10px;">
-        <label>Or enter a custom amount (KSh)</label>
+        <label id="customAmountLabel">Or enter a custom amount (KSh)</label>
         <input type="number" min="10" id="customAmountInput" placeholder="e.g. 500">
       </div>
 
@@ -183,7 +206,7 @@ function render(data) {
     el.innerHTML = `
       <span class="emoji">${item.icon}</span>
       <div>${item.name}</div>
-      <div class="price">${formatKsh(item.price)}</div>
+      <div class="price" id="price-${item.id}">${formatMoney(item.price)}</div>
       <div class="qty-controls">
         <button class="qty-btn" onclick="changeQty('${item.id}', -1)">−</button>
         <span id="qty-${item.id}">0</span>
@@ -193,8 +216,17 @@ function render(data) {
     grid.appendChild(el);
   });
 
+  // International visitors type their custom amount in USD; it's converted
+  // back to KES immediately so cartTotal() - and everything sent to the
+  // backend - always stays in KES underneath.
+  if (isInternationalVisitor && kesToUsdRate) {
+    document.getElementById('customAmountLabel').textContent = 'Or enter a custom amount (USD)';
+    document.getElementById('customAmountInput').placeholder = 'e.g. 10';
+  }
+
   document.getElementById('customAmountInput').addEventListener('input', (e) => {
-    customAmount = Number(e.target.value) || 0;
+    const typed = Number(e.target.value) || 0;
+    customAmount = (isInternationalVisitor && kesToUsdRate) ? typed / kesToUsdRate : typed;
     updateTotal();
   });
 }
@@ -210,7 +242,7 @@ function cartTotal() {
 }
 
 function updateTotal() {
-  document.getElementById('liveTotal').textContent = formatKsh(cartTotal());
+  document.getElementById('liveTotal').textContent = formatMoney(cartTotal());
 }
 
 function openModal() {
@@ -220,10 +252,21 @@ function openModal() {
   const summaryEl = document.getElementById('checkoutSummary');
   const lines = Object.values(cart)
     .filter((it) => it.quantity > 0)
-    .map((it) => `<div class="receipt-figures" style="margin-bottom:6px;"><span>${it.name} × ${it.quantity}</span><span>${formatKsh(it.quantity * it.price)}</span></div>`);
-  if (customAmount > 0) lines.push(`<div class="receipt-figures"><span>Custom Support</span><span>${formatKsh(customAmount)}</span></div>`);
+    .map((it) => `<div class="receipt-figures" style="margin-bottom:6px;"><span>${it.name} × ${it.quantity}</span><span>${formatMoney(it.quantity * it.price)}</span></div>`);
+  if (customAmount > 0) lines.push(`<div class="receipt-figures"><span>Custom Support</span><span>${formatMoney(customAmount)}</span></div>`);
   summaryEl.innerHTML = lines.join('') || '<p>Custom support</p>';
-  document.getElementById('checkoutTotal').textContent = formatKsh(total);
+  document.getElementById('checkoutTotal').textContent = formatMoney(total);
+
+  // Transparency note: when the displayed total is in USD, show the actual
+  // KES amount that gets charged underneath - nothing about the real charge
+  // ever changes, this just tells the payer what number their bank will see.
+  const fxEl = document.getElementById('fxEstimate');
+  if (isInternationalVisitor && kesToUsdRate) {
+    fxEl.textContent = `Charged as ${formatKsh(total)} (your bank applies its own exchange rate)`;
+    fxEl.style.display = 'block';
+  } else {
+    fxEl.style.display = 'none';
+  }
 
   document.getElementById('checkoutModal').classList.add('open');
 }
@@ -331,7 +374,11 @@ if (returnedReference) {
   pollStatus(returnedReference);
 }
 
-load();
+(async function init() {
+  await detectVisitorCurrency();
+  if (isInternationalVisitor) setPaymentMethod('card');
+  load();
+})();
 </script>
 <script>
 function toggleNav() {
