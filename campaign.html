@@ -96,19 +96,27 @@ let isInternationalVisitor = false;
 let kesToUsdRate = null;
 
 async function detectVisitorCurrency() {
-  try {
-    const res = await fetch('https://ipapi.co/json/');
-    if (res.ok) {
-      const geo = await res.json();
-      isInternationalVisitor = !!(geo.country_code && geo.country_code !== 'KE');
-    }
-  } catch (e) { /* default: treat as Kenyan (KSh), the safe default */ }
+  // Testing hook: open the campaign page with ?intl=1 in the URL to force
+  // the international (USD) display path without needing a VPN or actually
+  // being outside Kenya. Remove the query param to see the normal KSh view.
+  if (new URLSearchParams(location.search).get('intl') === '1') {
+    isInternationalVisitor = true;
+  } else {
+    try {
+      const res = await fetch('https://ipapi.co/json/');
+      if (res.ok) {
+        const geo = await res.json();
+        isInternationalVisitor = !!(geo.country_code && geo.country_code !== 'KE');
+      }
+    } catch (e) { /* default: treat as Kenyan (KSh), the safe default */ }
+  }
 
   if (isInternationalVisitor) {
     try {
       const rateRes = await fetch('https://open.er-api.com/v6/latest/KES');
       const rateData = await rateRes.json();
       kesToUsdRate = rateData.rates && rateData.rates.USD;
+      console.log('FUNDme: KES→USD rate in use:', kesToUsdRate);
     } catch (e) { /* rate stays null - formatMoney falls back to KSh */ }
   }
 }
