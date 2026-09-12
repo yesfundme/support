@@ -3,9 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Refund / Payment Policy — YesFUNDme</title>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800\&family=Inter:wght@400;500;600;700\&display=swap" rel="stylesheet">
+<title>Refund & Payment Policy — YesFUNDme</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<style>
+  .legal-content h2 { font-size: 20px; margin: 32px 0 12px; }
+  .legal-content h2:first-child { margin-top: 0; }
+  .legal-content p { margin-bottom: 12px; color: var(--ink); }
+  .legal-content ul { margin: 0 0 12px; padding-left: 20px; color: var(--ink); }
+  .legal-content li { margin-bottom: 6px; line-height: 1.6; }
+  .legal-content strong { color: var(--ink); }
+  .legal-meta { color: var(--ink-soft); font-size: 14px; margin-bottom: 24px; }
+</style>
 </head>
 <body>
 <nav class="nav">
@@ -13,12 +22,67 @@
   <button class="nav-toggle" onclick="toggleNav()" aria-label="Menu"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
   <div class="nav-links"><a href="index.html">Home</a></div>
 </nav>
-<div class="container" style="padding:40px 20px 60px;max-width:720px;">
-  <h1 style="font-size:28px;margin-bottom:20px;">Refund / Payment Policy</h1>
-  <div class="card">
-    <p>This page holds YesFUNDmes Refund / Payment Policy. Replace this placeholder with reviewed legal and policy content before launch it should cover how the platform operates, supporter and campaign-owner responsibilities, and how disputes or refunds are handled.</p>
+
+<div class="container" style="padding:40px 20px 60px;max-width:760px;">
+  <h1 style="font-size:28px;margin-bottom:6px;">Refund & Payment Policy</h1>
+  <p class="legal-meta">Effective Date: 9 September 2026 · Last Updated: 9 September 2026</p>
+
+  <div class="card legal-content">
+    <p>This Refund & Payment Policy explains how payments, refunds, and disputes are handled on <strong>YesFUNDme</strong>. It should be read together with our <a href="terms.html" style="color:var(--green);font-weight:600;">Terms & Conditions</a>.</p>
+
+    <h2>1. Contributions Are Voluntary</h2>
+    <p>Contributions made through YesFUNDme are voluntary gifts of support to a campaign. They are <strong>not purchases of goods or services</strong>, and a supporter does not receive anything in exchange for a contribution.</p>
+    <p>Because of this, contributions are <strong>generally non-refundable</strong> once processed. Simply changing your mind after a successful payment is not, by itself, grounds for a refund.</p>
+
+    <h2>2. When a Payment Is Considered Final</h2>
+    <p>A contribution is only recorded as successful — and only added to a campaign's balance — after Paystack independently confirms the transaction through a secure, signature-verified webhook. A payment is never marked successful simply because a supporter was redirected back to YesFUNDme or closed the payment window; only Paystack's own confirmation counts.</p>
+    <p>If a payment fails, is abandoned, or is never confirmed by Paystack, no charge is counted toward the campaign, and nothing needs to be refunded because nothing was ever collected.</p>
+
+    <h2>3. Circumstances Where a Refund May Be Considered</h2>
+    <p>YesFUNDme may investigate and, where appropriate, arrange a refund or reversal in cases such as:</p>
+    <ul>
+      <li>A duplicate charge caused by a technical error.</li>
+      <li>An unauthorized transaction (for example, a payment made without the cardholder's or phone owner's consent).</li>
+      <li>A payment that was processed in clear error (for example, an incorrect amount caused by a system fault).</li>
+      <li>A campaign that is confirmed, after investigation, to be fraudulent or in violation of our Terms.</li>
+    </ul>
+    <p>Refund requests of this kind should be reported through our <a href="contact.html" style="color:var(--green);font-weight:600;">Contact Us</a> page or the <strong>Report this campaign</strong> link on the relevant campaign, as soon as possible after the transaction.</p>
+
+    <h2>4. Funds Already Withdrawn</h2>
+    <p>If a campaign owner has already withdrawn the funds in question before a refund request is investigated, recovering that money is significantly more difficult and may not always be possible. In such cases, YesFUNDme will investigate in good faith and may pursue recovery from the campaign owner, but cannot guarantee that a refund will be issued once funds have left the platform.</p>
+    <p>This is one reason it's important to report a concern about a specific contribution as soon as possible, rather than waiting.</p>
+
+    <h2>5. Platform Fees Are Non-Refundable</h2>
+    <p>YesFUNDme's platform fee (see our Terms & Conditions for the current rate) compensates YesFUNDme for operating the platform and facilitating the transaction. Where a refund is approved for the net amount credited to a campaign, the platform fee portion is generally non-refundable, as the service of processing and facilitating that transaction was already delivered.</p>
+
+    <h2>6. Card Payment Disputes and Chargebacks</h2>
+    <p>Card payments are processed entirely through Paystack's hosted checkout — YesFUNDme never receives or stores your card details. If you believe a card charge was unauthorized or incorrect, you may also raise a dispute directly with your card issuer (a "chargeback"), in addition to or instead of contacting YesFUNDme.</p>
+    <p>Chargebacks are ultimately governed by your card issuer's and Paystack's own rules and timelines, which YesFUNDme does not control.</p>
+
+    <h2>7. M-Pesa Payment Issues</h2>
+    <p>M-Pesa payments are initiated through Paystack's mobile money integration. If you were charged on M-Pesa but the payment does not appear to have reached the intended campaign, contact us with your M-Pesa transaction confirmation message (the SMS you received) so we can trace the payment reference and investigate.</p>
+
+    <h2>8. Withdrawal Requests Are Not "Refunds"</h2>
+    <p>A campaign owner requesting a withdrawal of their own campaign's available balance is a different process from a supporter refund, and is covered separately in our Terms & Conditions. Withdrawal requests go through review before being marked paid and cannot exceed a campaign's available balance.</p>
+
+    <h2>9. How to Request a Refund or Report an Issue</h2>
+    <p>To request a refund or report a payment issue, please contact us with the following information so we can investigate quickly:</p>
+    <ul>
+      <li>The campaign name or link.</li>
+      <li>The approximate date and amount of the transaction.</li>
+      <li>Your M-Pesa confirmation message or card statement reference, if available.</li>
+      <li>A brief description of the issue.</li>
+    </ul>
+    <p>You can reach us at <a href="mailto:yesfundme100@gmail.com" style="color:var(--green);font-weight:600;">yesfundme100@gmail.com</a>, or through our <a href="contact.html" style="color:var(--green);font-weight:600;">Contact Us</a> page.</p>
+
+    <h2>10. Response Time</h2>
+    <p>We aim to acknowledge refund and payment-dispute requests promptly, though investigation time can vary depending on the complexity of the issue and how quickly Paystack or the relevant bank/mobile network responds to our inquiries.</p>
+
+    <h2>11. Changes to This Policy</h2>
+    <p>We may update this Refund & Payment Policy from time to time. Updates will be published on the platform with a revised effective date. Continued use of YesFUNDme after an update takes effect constitutes acceptance of the revised Policy.</p>
   </div>
 </div>
+
 <script>
 function toggleNav() {
   document.querySelector('.nav-links').classList.toggle('open');
