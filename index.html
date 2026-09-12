@@ -148,7 +148,20 @@ const categoryLabels = {
     const data = await res.json();
     const c = data.campaign;
     const pct = c.target_amount > 0 ? Math.min(100, Math.round((c.amount_collected / c.target_amount) * 100)) : 0;
-    const fmt = (n) => 'KSh ' + Number(n || 0).toLocaleString('en-KE', { maximumFractionDigits: 0 });
+
+    // This campaign is set to display_currency: 'usd', so it always shows in
+    // USD here regardless of visitor location - same rule the campaign page
+    // itself follows. The actual amounts stay in KES underneath either way;
+    // this is purely how the number is presented.
+    let fmt = (n) => 'KSh ' + Number(n || 0).toLocaleString('en-KE', { maximumFractionDigits: 0 });
+    if (c.display_currency === 'usd') {
+      try {
+        const rateRes = await fetch('https://open.er-api.com/v6/latest/KES');
+        const rateData = await rateRes.json();
+        const rate = rateData.rates && rateData.rates.USD;
+        if (rate) fmt = (n) => '$' + (Number(n || 0) * rate).toFixed(2);
+      } catch (e) { /* fall back to the KSh formatter above if the rate fetch fails */ }
+    }
 
     document.getElementById('heroCategory').textContent = categoryLabels[c.category] || c.category;
     document.getElementById('heroTitle').textContent = c.title;
