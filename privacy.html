@@ -4,8 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Privacy Policy — YesFUNDme</title>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800\&family=Inter:wght@400;500;600;700\&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<style>
+  .legal-content h2 { font-size: 20px; margin: 32px 0 12px; }
+  .legal-content h2:first-child { margin-top: 0; }
+  .legal-content p { margin-bottom: 12px; color: var(--ink); }
+  .legal-content ul { margin: 0 0 12px; padding-left: 20px; color: var(--ink); }
+  .legal-content li { margin-bottom: 6px; line-height: 1.6; }
+  .legal-content strong { color: var(--ink); }
+  .legal-meta { color: var(--ink-soft); font-size: 14px; margin-bottom: 24px; }
+</style>
 </head>
 <body>
 <nav class="nav">
@@ -13,12 +22,91 @@
   <button class="nav-toggle" onclick="toggleNav()" aria-label="Menu"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
   <div class="nav-links"><a href="index.html">Home</a></div>
 </nav>
-<div class="container" style="padding:40px 20px 60px;max-width:720px;">
-  <h1 style="font-size:28px;margin-bottom:20px;">Privacy Policy</h1>
-  <div class="card">
-    <p>This page holds YesFUNDmes Privacy Policy. Replace this placeholder with reviewed legal and policy content before launch it should cover how the platform operates, supporter and campaign-owner responsibilities, and how disputes or refunds are handled.</p>
+
+<div class="container" style="padding:40px 20px 60px;max-width:760px;">
+  <h1 style="font-size:28px;margin-bottom:6px;">Privacy Policy</h1>
+  <p class="legal-meta">Effective Date: 9 September 2026 · Last Updated: 9 September 2026</p>
+
+  <div class="card legal-content">
+    <p>This Privacy Policy explains how <strong>YesFUNDme</strong> collects, uses, stores, and protects information when you create an account, create or support a campaign, or otherwise use the platform.</p>
+    <p>This Policy should be read together with our <a href="terms.html" style="color:var(--green);font-weight:600;">Terms & Conditions</a>. By using YesFUNDme, you agree to the practices described here.</p>
+
+    <h2>1. Information We Collect</h2>
+    <p><strong>Account information.</strong> When you register, we collect your full name, email address, and a securely hashed version of your password. We never store your password in plain text.</p>
+    <p><strong>Campaign information.</strong> When you create a campaign, we collect the campaign title, description, category, target amount, beneficiary/organizer name, phone number, location, any photo you upload, and any additional information you choose to provide.</p>
+    <p><strong>Payment and transaction information.</strong> When you support a campaign, we collect the amount, your name and message if you choose to share them (or nothing at all if you support anonymously), your phone number if paying via M-Pesa, and a payment reference used to track the transaction. Card payments are handled entirely on Paystack's own hosted checkout page — YesFUNDme never sees or stores your card number, expiry date, or CVV.</p>
+    <p><strong>Withdrawal information.</strong> When a campaign owner requests a withdrawal, we collect the destination details needed to pay out funds: bank name, account name and number, or M-Pesa name and phone number.</p>
+    <p><strong>Technical and location information.</strong> To determine which payment methods and currency to display, YesFUNDme performs an IP-based location lookup through a third-party service. This is approximate (city/country level, not precise GPS) and does not require your permission to run, since no exact location is captured. This lookup is used only to decide what to show you on screen — it is not stored against your account.</p>
+    <p><strong>Session information.</strong> When you log in, a security token is stored in your browser's local storage to keep you signed in. This token is removed when you log out and is never sent anywhere other than YesFUNDme's own backend.</p>
+
+    <h2>2. How We Use Information</h2>
+    <p>We use the information described above to:</p>
+    <ul>
+      <li>Create and manage your account.</li>
+      <li>Publish and operate the campaigns you create.</li>
+      <li>Process contributions and withdrawals through our payment partners.</li>
+      <li>Calculate campaign balances, platform fees, and available balances accurately.</li>
+      <li>Display appropriate payment options and currency based on a supporter's approximate location.</li>
+      <li>Investigate reported campaigns, suspected fraud, or violations of our Terms.</li>
+      <li>Communicate with you about your account, campaign, or a transaction.</li>
+      <li>Maintain the security, integrity, and reliability of the platform.</li>
+    </ul>
+
+    <h2>3. Payment Processing and Third Parties</h2>
+    <p>YesFUNDme uses <strong>Paystack</strong> to process all M-Pesa and card payments. When you make or receive a payment, the information necessary to process that payment (such as amount, phone number for M-Pesa, or card details entered directly on Paystack's checkout page) is shared with Paystack in order to complete the transaction.</p>
+    <p>Paystack's own privacy policy governs how it handles information you provide directly to it (for example, card details you enter on its hosted checkout page). YesFUNDme does not control, and is not responsible for, Paystack's independent handling of that information.</p>
+    <p>A contribution is only recorded as successful once Paystack confirms it through a secure, signature-verified webhook — this same mechanism prevents a transaction from being duplicated or falsely marked as paid.</p>
+
+    <h2>4. Where Information Is Stored</h2>
+    <p>Account, campaign, payment, and withdrawal records are stored in a secured database hosted by our infrastructure provider. Uploaded campaign images are stored in a separate secured file storage service. Our backend application runs on third-party cloud hosting infrastructure.</p>
+    <p>These providers may process or store data outside Kenya. Where this occurs, YesFUNDme takes reasonable steps to ensure information continues to be handled securely and in a manner consistent with this Policy.</p>
+
+    <h2>5. Data Sharing</h2>
+    <p>We do not sell your personal information. We only share information:</p>
+    <ul>
+      <li>With payment providers (Paystack) as necessary to process a transaction.</li>
+      <li>With our hosting, database, and storage providers, solely to operate the platform.</li>
+      <li>Where required by law, regulation, or a valid request from a competent authority.</li>
+      <li>Where necessary to investigate fraud, protect the rights or safety of users, or enforce our Terms.</li>
+      <li>With your consent, or at your direction (for example, information you choose to display publicly on a campaign page).</li>
+    </ul>
+
+    <h2>6. What Supporters See Publicly</h2>
+    <p>A campaign page publicly displays the campaign title, description, image, beneficiary/organizer name, location, amount raised, target amount, and number of supporters.</p>
+    <p>A supporter's name and message are only shown publicly if the supporter chooses to share them and does not select "Support anonymously." Choosing to support anonymously means your name is not stored against that contribution at all.</p>
+
+    <h2>7. Data Retention</h2>
+    <p>We retain account, campaign, and transaction records for as long as your account remains active and for a reasonable period afterward, as necessary to meet legal, accounting, fraud-prevention, or dispute-resolution obligations. Withdrawal and payment records in particular may need to be retained longer to comply with financial recordkeeping requirements.</p>
+
+    <h2>8. Your Rights</h2>
+    <p>Subject to applicable law, including the Kenya Data Protection Act, 2019, you may have the right to:</p>
+    <ul>
+      <li>Access the personal information YesFUNDme holds about you.</li>
+      <li>Request correction of inaccurate information.</li>
+      <li>Request deletion of your information, subject to our legitimate need to retain certain records (for example, completed transaction history).</li>
+      <li>Object to or restrict certain uses of your information.</li>
+      <li>Withdraw consent where processing is based on consent.</li>
+    </ul>
+    <p>To exercise any of these rights, contact us through the official contact details provided on the platform.</p>
+
+    <h2>9. Security</h2>
+    <p>We apply reasonable technical and organizational measures to protect your information, including password hashing, authenticated sessions, restricted administrative access, and signature-verified payment webhooks. However, no method of transmission or storage is completely secure, and we cannot guarantee absolute security.</p>
+    <p>You are responsible for keeping your account password confidential and for all activity that occurs under your account.</p>
+
+    <h2>10. Children's Privacy</h2>
+    <p>YesFUNDme is not directed at, and is not intended to be used by, children. We do not knowingly collect personal information from children. If you believe a child has provided us with personal information, please contact us so we can take appropriate action.</p>
+
+    <h2>11. Cookies and Local Storage</h2>
+    <p>YesFUNDme uses your browser's local storage (not tracking cookies) to keep you logged in between visits. This stores a session token and basic account details (name, email, role) on your own device, and is cleared when you log out.</p>
+
+    <h2>12. Changes to This Policy</h2>
+    <p>We may update this Privacy Policy from time to time to reflect changes in our practices or for legal, operational, or regulatory reasons. Updates will be published on the platform with a revised effective date. Continued use of YesFUNDme after an update takes effect constitutes acceptance of the revised Policy.</p>
+
+    <h2>13. Contact</h2>
+    <p>If you have questions, concerns, or requests relating to this Privacy Policy or how your information is handled, please contact YesFUNDme through the official contact details provided on the platform.</p>
   </div>
 </div>
+
 <script>
 function toggleNav() {
   document.querySelector('.nav-links').classList.toggle('open');
