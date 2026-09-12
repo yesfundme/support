@@ -180,8 +180,8 @@ function render(data) {
     <div class="card" style="margin-top:20px;">
       <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
       <div class="receipt-figures" style="margin-top:10px;">
-        <span><strong>${formatKsh(c.amount_collected)}</strong> raised</span>
-        <span>of ${formatKsh(c.target_amount)}</span>
+        <span><strong>${formatMoney(c.amount_collected)}</strong> raised</span>
+        <span>of ${formatMoney(c.target_amount)}</span>
       </div>
       <div class="receipt-figures" style="margin-top:8px;">
         <span>${data.supporters_count} Supporters</span>
