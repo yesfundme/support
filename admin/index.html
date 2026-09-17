@@ -125,21 +125,34 @@ async function loadWithdrawals() {
   const { withdrawals } = await apiRequest('/admin/withdrawals', { auth: true });
   document.getElementById('withdrawalsBox').innerHTML = `
     <table class="data-table">
-      <thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Destination</th><th>Status</th><th></th></tr></thead>
-      <tbody>${withdrawals.map((w) => `
+      <thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Destination</th><th>Status</th><th>ID</th><th></th></tr></thead>
+      <tbody>${withdrawals.map((w) => {
+        const statusLabel = w.status === 'processing' ? 'Approved' : w.status.charAt(0).toUpperCase() + w.status.slice(1);
+        return `
         <tr>
           <td data-label="User">${w.users?.full_name || ''}</td>
           <td data-label="Amount">${formatKsh(w.amount)}</td>
           <td data-label="Method" style="text-transform:capitalize;">${w.method}</td>
           <td data-label="Destination">${w.method === 'bank' ? `${w.bank_name} · ${w.account_number}` : w.mpesa_phone}</td>
-          <td data-label="Status"><span class="badge ${w.status === 'paid' ? 'badge-success' : w.status === 'failed' ? 'badge-failed' : 'badge-pending'}">${w.status}</span></td>
+          <td data-label="Status"><span class="badge ${w.status === 'paid' ? 'badge-success' : w.status === 'failed' ? 'badge-failed' : 'badge-pending'}">${statusLabel}</span></td>
+          <td data-label="ID">${w.id_card_path ? `<button class="btn btn-secondary" style="padding:6px 12px;font-size:13px;" onclick="viewIdCard('${w.id}')">View ID</button>` : '—'}</td>
           <td>
             ${w.status === 'pending' ? `<button class="btn btn-secondary" style="padding:6px 12px;font-size:13px;" onclick="updateWithdrawal('${w.id}','processing')">Approve</button>` : ''}
             ${w.status === 'processing' ? `<button class="btn btn-primary" style="padding:6px 12px;font-size:13px;" onclick="updateWithdrawal('${w.id}','paid')">Mark as Paid</button>` : ''}
             ${['pending','processing'].includes(w.status) ? `<button class="btn btn-secondary" style="padding:6px 12px;font-size:13px;" onclick="updateWithdrawal('${w.id}','failed')">Reject</button>` : ''}
           </td>
-        </tr>`).join('')}</tbody>
+        </tr>`;
+      }).join('')}</tbody>
     </table>`;
+}
+
+async function viewIdCard(withdrawalId) {
+  try {
+    const { url } = await apiRequest(`/admin/withdrawals/${withdrawalId}/id-document`, { auth: true });
+    window.open(url, '_blank');
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
 async function updateWithdrawal(id, status) {
