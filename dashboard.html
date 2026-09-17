@@ -51,8 +51,14 @@
 
     <div class="form-field"><label>Amount to Withdraw (KSh)</label><input type="number" id="withdrawAmount" min="1"></div>
 
+    <div class="form-field">
+      <label>Upload your ID card</label>
+      <input type="file" id="idCardFile" accept="image/*">
+      <small style="color:var(--ink-soft);font-size:13px;">Used to verify your identity before releasing funds. Never shown publicly.</small>
+    </div>
+
     <div class="error-banner" id="withdrawError"></div>
-    <button class="btn btn-primary btn-block" onclick="submitWithdrawal()">Request Withdrawal</button>
+    <button class="btn btn-primary btn-block" id="submitWithdrawBtn" onclick="submitWithdrawal()">Request Withdrawal</button>
     <button class="btn btn-secondary btn-block" style="margin-top:10px;" onclick="closeWithdrawModal()">Cancel</button>
   </div>
 </div>
@@ -114,15 +120,25 @@ function renderDashboard(c, availableBalance, totalCollected, withdrawals) {
     <div class="card" style="margin-bottom:20px;">
       <h3 style="margin-bottom:14px;">Recent Withdrawals</h3>
       <table class="data-table">
-        <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead>
+        <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Status</th><th>Destination</th></tr></thead>
         <tbody>
-          ${withdrawals.length ? withdrawals.map((w) => `
+          ${withdrawals.length ? withdrawals.map((w) => {
+            const statusLabel = w.status === 'processing' ? 'Approved' : w.status.charAt(0).toUpperCase() + w.status.slice(1);
+            const destination = w.method === 'bank'
+              ? `${w.bank_name || ''} · ${w.account_number || ''}`
+              : (w.mpesa_phone || '');
+            // Bank/M-Pesa details only appear once the withdrawal has moved
+            // past pending review - shown here for Approved and Paid.
+            const showDestination = w.status === 'processing' || w.status === 'paid';
+            return `
             <tr>
               <td data-label="Date">${new Date(w.requested_at).toLocaleDateString()}</td>
               <td data-label="Amount">${formatKsh(w.amount)}</td>
               <td data-label="Method" style="text-transform:capitalize;">${w.method}</td>
-              <td data-label="Status"><span class="badge ${w.status === 'paid' ? 'badge-success' : w.status === 'failed' ? 'badge-failed' : 'badge-pending'}">${w.status}</span></td>
-            </tr>`).join('') : '<tr><td colspan="4">No withdrawals yet.</td></tr>'}
+              <td data-label="Status"><span class="badge ${w.status === 'paid' ? 'badge-success' : w.status === 'failed' ? 'badge-failed' : 'badge-pending'}">${statusLabel}</span></td>
+              <td data-label="Destination">${showDestination ? destination : '—'}</td>
+            </tr>`;
+          }).join('') : '<tr><td colspan="5">No withdrawals yet.</td></tr>'}
         </tbody>
       </table>
     </div>
@@ -164,10 +180,38 @@ function setMethod(m) {
   document.getElementById('mpesaFields').style.display = m === 'mpesa' ? 'block' : 'none';
 }
 
+async function uploadIdCard(file) {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  const res = await fetch(`${API_BASE}/uploads/id-document`, {
+    method: 'POST',
+    headers: authHeaders(), // no Content-Type - the browser sets the multipart boundary
+    body: formData
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Could not upload ID document');
+  return data.path;
+}
+
 async function submitWithdrawal() {
   const errorEl = document.getElementById('withdrawError');
+  const submitBtn = document.getElementById('submitWithdrawBtn');
   errorEl.style.display = 'none';
+
+  const idCardFile = document.getElementById('idCardFile').files[0];
+  if (!idCardFile) {
+    errorEl.textContent = 'Please upload a photo of your ID card.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
   try {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Uploading ID…';
+    const id_card_path = await uploadIdCard(idCardFile);
+
+    submitBtn.textContent = 'Submitting…';
     await apiRequest('/withdrawals', {
       method: 'POST',
       auth: true,
@@ -179,7 +223,8 @@ async function submitWithdrawal() {
         account_name: document.getElementById('account_name').value,
         account_number: document.getElementById('account_number').value,
         mpesa_name: document.getElementById('mpesa_name').value,
-        mpesa_phone: document.getElementById('mpesa_phone').value
+        mpesa_phone: document.getElementById('mpesa_phone').value,
+        id_card_path
       }
     });
     closeWithdrawModal();
@@ -187,6 +232,9 @@ async function submitWithdrawal() {
   } catch (err) {
     errorEl.textContent = err.message;
     errorEl.style.display = 'block';
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Request Withdrawal';
   }
 }
 
