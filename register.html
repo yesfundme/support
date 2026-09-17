@@ -32,7 +32,11 @@
       </div>
       <div class="form-field">
         <label>Country</label>
-        <select id="country">
+        <div id="countryDisplay" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);">
+          <span id="countryName" style="font-size:15px;">Detecting…</span>
+          <a href="#" id="changeCountryLink" style="font-size:13px;color:var(--green);font-weight:600;">Change</a>
+        </div>
+        <select id="country" style="display:none;margin-top:8px;">
           <option value="KE">Kenya</option>
           <option value="OTHER">Other country</option>
         </select>
@@ -68,19 +72,47 @@ const category = params.get('category') || '';
 // ID number is collected for Kenyan users only.
 const countrySelect = document.getElementById('country');
 const idNumberField = document.getElementById('idNumberField');
+const countryName = document.getElementById('countryName');
+
+function applyCountry(code, label) {
+  countrySelect.value = code;
+  countryName.textContent = label;
+  idNumberField.style.display = code === 'KE' ? 'block' : 'none';
+}
+
 countrySelect.addEventListener('change', () => {
-  idNumberField.style.display = countrySelect.value === 'KE' ? 'block' : 'none';
+  applyCountry(countrySelect.value, countrySelect.value === 'KE' ? 'Kenya' : 'Other country');
 });
 
-// Default the country from an IP lookup so most users don't have to change it.
+// Let the user correct the detected country. IP lookups get it wrong often
+// enough (VPNs, mobile carriers routing abroad) that a Kenyan user must
+// always be able to switch back and enter their ID number.
+document.getElementById('changeCountryLink').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('countryDisplay').style.display = 'none';
+  countrySelect.style.display = 'block';
+  countrySelect.style.marginTop = '0';
+});
+
+// Detect the country from the visitor's IP so most people never touch this.
 (async function detectCountry() {
+  applyCountry('KE', 'Kenya'); // safe default while the lookup runs
+
+  // Testing hooks: append ?country=OTHER to preview the non-Kenyan path
+  // (ID field hidden), or ?country=KE to force the Kenyan path, without
+  // needing a VPN. Real visitors never hit these.
+  const forced = new URLSearchParams(location.search).get('country');
+  if (forced === 'OTHER') { applyCountry('OTHER', 'Other country (test)'); return; }
+  if (forced === 'KE') { applyCountry('KE', 'Kenya'); return; }
+
   try {
     const res = await fetch('https://ipapi.co/json/');
     if (!res.ok) return;
     const geo = await res.json();
-    if (geo.country_code && geo.country_code !== 'KE') {
-      countrySelect.value = 'OTHER';
-      idNumberField.style.display = 'none';
+    if (geo.country_code === 'KE') {
+      applyCountry('KE', 'Kenya');
+    } else if (geo.country_code) {
+      applyCountry('OTHER', geo.country_name || 'Other country');
     }
   } catch (e) { /* leave the Kenya default in place */ }
 })();
