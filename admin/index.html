@@ -97,7 +97,9 @@ async function loadCampaigns() {
   document.getElementById('campaignsBox').innerHTML = `
     <table class="data-table">
       <thead><tr><th>Title</th><th>Category</th><th>Collected</th><th>Status</th><th></th></tr></thead>
-      <tbody>${campaigns.map((c) => `
+      <tbody>${campaigns.map((c) => {
+        const safeTitle = c.title.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        return `
         <tr>
           <td data-label="Title"><a href="../campaign.html?slug=${c.public_slug}" target="_blank">${c.title}</a></td>
           <td data-label="Category">${c.category}</td>
@@ -105,9 +107,10 @@ async function loadCampaigns() {
           <td data-label="Status"><span class="badge ${c.status === 'active' ? 'badge-success' : 'badge-pending'}">${c.status}</span></td>
           <td>
             <button class="btn btn-secondary" style="padding:6px 12px;font-size:13px;" onclick="toggleCampaignStatus('${c.id}','${c.status}')">${c.status === 'active' ? 'Suspend' : 'Activate'}</button>
-            <button class="btn btn-secondary" style="padding:6px 12px;font-size:13px;" onclick="deleteCampaign('${c.id}')">Delete</button>
+            <button class="btn" style="padding:6px 12px;font-size:13px;background:#FDEDEC;color:#B3261E;border:1px solid #F5C6C2;" onclick="deleteCampaign('${c.id}','${safeTitle}')">Delete</button>
           </td>
-        </tr>`).join('')}</tbody>
+        </tr>`;
+      }).join('')}</tbody>
     </table>`;
 }
 
@@ -115,10 +118,18 @@ async function toggleCampaignStatus(id, current) {
   await apiRequest(`/admin/campaigns/${id}`, { method: 'PATCH', auth: true, body: { status: current === 'active' ? 'suspended' : 'active' } });
   loadCampaigns();
 }
-async function deleteCampaign(id) {
-  if (!confirm('Delete this campaign permanently?')) return;
-  await apiRequest(`/admin/campaigns/${id}`, { method: 'DELETE', auth: true });
-  loadCampaigns();
+async function deleteCampaign(id, title) {
+  const typed = prompt(`This permanently deletes "${title}" and all its transactions/withdrawal records. This cannot be undone.\n\nType the campaign title exactly to confirm:`);
+  if (typed !== title) {
+    if (typed !== null) alert('Title did not match - campaign was not deleted.');
+    return;
+  }
+  try {
+    await apiRequest(`/admin/campaigns/${id}`, { method: 'DELETE', auth: true });
+    loadCampaigns();
+  } catch (err) {
+    alert(`Could not delete campaign: ${err.message}`);
+  }
 }
 
 async function loadWithdrawals() {
