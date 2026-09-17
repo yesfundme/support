@@ -31,6 +31,7 @@
           <option value="campaign">Campaign Funding</option>
           <option value="birthday">Birthday Support</option>
           <option value="food">Food Support</option>
+          <option value="other">Other</option>
         </select>
       </div>
       <div class="form-field">
@@ -63,6 +64,7 @@
       <div class="form-field">
         <label>Location</label>
         <input type="text" id="location" placeholder="e.g. Eldoret, Kenya">
+        <small id="locationHint" style="display:none;color:var(--ink-soft);font-size:13px;">Detected automatically — edit if this isn't right.</small>
       </div>
       <div class="form-field">
         <label>Additional Information (optional)</label>
@@ -80,6 +82,24 @@ requireLogin();
 const params = new URLSearchParams(location.search);
 const presetCategory = params.get('category');
 if (presetCategory) document.getElementById('category').value = presetCategory;
+
+// Auto-fill Location using an IP-based lookup (no permission prompt, city-level
+// accuracy). Only fills it if the field is still empty, and fails silently if
+// the lookup is unavailable so it never blocks the form.
+(async function autofillLocation() {
+  const locationField = document.getElementById('location');
+  try {
+    const res = await fetch('https://ipapi.co/json/');
+    if (!res.ok) return;
+    const geo = await res.json();
+    if (!locationField.value && geo.city) {
+      locationField.value = geo.country_name ? `${geo.city}, ${geo.country_name}` : geo.city;
+      document.getElementById('locationHint').style.display = 'block';
+    }
+  } catch (e) {
+    // Silently ignore - leave the field blank for manual entry.
+  }
+})();
 
 document.getElementById('image_file').addEventListener('change', (e) => {
   const file = e.target.files[0];

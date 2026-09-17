@@ -26,7 +26,7 @@
   <section class="hero">
     <div>
       <h1>Support someone.<br>Make a difference.</h1>
-      <p class="tagline">Create a support campaign in minutes and receive financial support from friends, family and your community.</p>
+      <p class="tagline">Create a support campaign in minutes and receive financial support from friends, family and your community — straight to M-Pesa.</p>
       <div class="hero-ctas">
         <a href="#categories" class="btn btn-primary">Start a Support Campaign</a>
         <a href="search.html" class="btn btn-secondary">Support a Campaign</a>
@@ -80,6 +80,11 @@
         <span class="icon">🍲</span>
         <h3>Food Support</h3>
         <p>Raise money to help provide food and basic necessities.</p>
+      </div>
+      <div class="category-card" style="--cat-color:#4A5568" onclick="location.href='register.html?category=other'">
+        <span class="icon">➕</span>
+        <h3>Other</h3>
+        <p>Something else? Start a campaign for any other kind of support.</p>
       </div>
     </div>
   </section>
@@ -138,7 +143,7 @@ if (localStorage.getItem('fundme_token')) {
 // instead of showing static example figures.
 const categoryLabels = {
   funeral: 'Funeral Support', wedding: 'Wedding Support', hospital: 'Hospital Bills Support',
-  campaign: 'Campaign Funding', birthday: 'Birthday Support', food: 'Food Support'
+  campaign: 'Campaign Funding', birthday: 'Birthday Support', food: 'Food Support', other: 'Other'
 };
 
 (async function loadHeroCampaign() {

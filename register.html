@@ -24,11 +24,26 @@
     <form id="registerForm">
       <div class="form-field">
         <label>Full Name</label>
-        <input type="text" id="full_name" required>
+        <input type="text" id="full_name" placeholder="Official name as it appears on your official document" required>
       </div>
       <div class="form-field">
         <label>Email Address</label>
         <input type="email" id="email" required>
+      </div>
+      <div class="form-field">
+        <label>Country</label>
+        <select id="country">
+          <option value="KE">Kenya</option>
+          <option value="OTHER">Other country</option>
+        </select>
+      </div>
+      <div class="form-field" id="idNumberField">
+        <label>ID Number</label>
+        <input type="text" id="id_number" inputmode="numeric" placeholder="Your national ID number">
+      </div>
+      <div class="form-field">
+        <label>Date of Birth</label>
+        <input type="date" id="date_of_birth" required>
       </div>
       <div class="form-field">
         <label>Password</label>
@@ -50,6 +65,32 @@
 const params = new URLSearchParams(location.search);
 const category = params.get('category') || '';
 
+// ID number is collected for Kenyan users only.
+const countrySelect = document.getElementById('country');
+const idNumberField = document.getElementById('idNumberField');
+countrySelect.addEventListener('change', () => {
+  idNumberField.style.display = countrySelect.value === 'KE' ? 'block' : 'none';
+});
+
+// Default the country from an IP lookup so most users don't have to change it.
+(async function detectCountry() {
+  try {
+    const res = await fetch('https://ipapi.co/json/');
+    if (!res.ok) return;
+    const geo = await res.json();
+    if (geo.country_code && geo.country_code !== 'KE') {
+      countrySelect.value = 'OTHER';
+      idNumberField.style.display = 'none';
+    }
+  } catch (e) { /* leave the Kenya default in place */ }
+})();
+
+// Registration is for adults only, so the date picker can't offer anything
+// later than 18 years ago. The same rule is enforced on the server.
+const eighteenYearsAgo = new Date();
+eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
+document.getElementById('date_of_birth').max = eighteenYearsAgo.toISOString().split('T')[0];
+
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const errorEl = document.getElementById('error');
@@ -62,7 +103,10 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
         full_name: document.getElementById('full_name').value,
         email: document.getElementById('email').value,
         password: document.getElementById('password').value,
-        confirm_password: document.getElementById('confirm_password').value
+        confirm_password: document.getElementById('confirm_password').value,
+        date_of_birth: document.getElementById('date_of_birth').value,
+        country: document.getElementById('country').value,
+        id_number: document.getElementById('id_number').value
       }
     });
     localStorage.setItem('fundme_token', data.token);
